@@ -29,39 +29,70 @@ type Type interface {
 	Visit(TypeVisitor)
 }
 
+type TypeValue interface {
+	isTypeValue()
+}
+
 type Bit struct{}
 
 func (bit Bit) Visit(visitor TypeVisitor) { visitor.VisitBit(bit) }
+
+type BitValue bool
+
+func (BitValue) isTypeValue() {}
 
 type Int struct{}
 
 func (intt Int) Visit(visitor TypeVisitor) { visitor.VisitInt(intt) }
 
+type IntValue int
+
+func (IntValue) isTypeValue() {}
+
 type Uint struct{}
 
 func (uintt Uint) Visit(visitor TypeVisitor) { visitor.VisitUint(uintt) }
+
+type UintValue uint
+
+func (UintValue) isTypeValue() {}
 
 type Rune struct{}
 
 func (runee Rune) Visit(visitor TypeVisitor) { visitor.VisitRune(runee) }
 
-type Product struct {
-	Fields []Type
-}
+type RuneValue rune
+
+func (RuneValue) isTypeValue() {}
+
+type Product []Type
 
 func (product Product) Visit(visitor TypeVisitor) { visitor.VisitProduct(product) }
 
-type Coproduct struct {
-	Variants []Type
-}
+type ProductValue []TypeValue
+
+func (ProductValue) isTypeValue() {}
+
+type Coproduct []Type
 
 func (coproduct Coproduct) Visit(visitor TypeVisitor) { visitor.VisitCoproduct(coproduct) }
+
+type CoproductValue struct {
+	TypeValue
+	Variant uint
+}
+
+func (CoproductValue) isTypeValue() {}
 
 type List struct {
 	Type
 }
 
 func (list List) Visit(visitor TypeVisitor) { visitor.VisitList(list) }
+
+type ListValue []TypeValue
+
+func (ListValue) isTypeValue() {}
 
 type Array struct {
 	Type
@@ -70,11 +101,19 @@ type Array struct {
 
 func (array Array) Visit(visitor TypeVisitor) { visitor.VisitArray(array) }
 
+type ArrayValue []TypeValue
+
+func (ArrayValue) isTypeValue() {}
+
 type Optional struct {
 	Type
 }
 
 func (optional Optional) Visit(visitor TypeVisitor) { visitor.VisitOptional(optional) }
+
+type OptionalValue struct{ TypeValue }
+
+func (OptionalValue) isTypeValue() {}
 
 type Enum struct {
 	Values []string
@@ -82,12 +121,20 @@ type Enum struct {
 
 func (enum Enum) Visit(visitor TypeVisitor) { visitor.VisitEnum(enum) }
 
+type EnumValue uint
+
+func (EnumValue) isTypeValue() {}
+
 type EnumInt struct {
 	Min int
 	Max int
 }
 
 func (enumInt EnumInt) Visit(visitor TypeVisitor) { visitor.VisitEnumInt(enumInt) }
+
+type EnumIntValue int
+
+func (EnumIntValue) isTypeValue() {}
 
 type Alias struct {
 	Type
@@ -221,8 +268,8 @@ func (visitor *PrettyPrinter) VisitProduct(product Product) {
 	visitor.WriteString("(\n")
 	visitor.ident++
 
-	n := len(product.Fields)
-	for i, field := range product.Fields {
+	n := len(product)
+	for i, field := range product {
 		field.Visit(visitor)
 		if i < n-1 {
 			visitor.Builder.WriteString(",\n")
@@ -237,8 +284,8 @@ func (visitor *PrettyPrinter) VisitCoproduct(coproduct Coproduct) {
 	visitor.WriteString("[\n")
 	visitor.ident++
 
-	n := len(coproduct.Variants)
-	for i, field := range coproduct.Variants {
+	n := len(coproduct)
+	for i, field := range coproduct {
 		field.Visit(visitor)
 		if i < n-1 {
 			visitor.Builder.WriteString(",")
@@ -302,10 +349,10 @@ func (visitor *PrettyPrinter) String() string {
 
 func main() {
 	String := Alias{List{Rune{}}, "string"}
-	BttvEmotesDB := List{Product{[]Type{
+	BttvEmotesDB := List{Product([]Type{
 		String,
 		List{String},
-	}}}
+	})}
 
 	tsv := PrettyPrinter{
 		aliases: make(map[string]string),
