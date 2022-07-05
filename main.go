@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	"github.com/rprtr258/go-flow/fun"
+	"github.com/rprtr258/go-flow/stream"
 )
 
 // TODO: own Log2 on uint
@@ -182,7 +185,8 @@ func (alias Alias) Visit(visitor TypeVisitor) { visitor.VisitAlias(alias) }
 // TODO: algebraic printer
 type PrettyPrinter struct {
 	strings.Builder
-	ident uint
+	ident   uint
+	aliases map[string]string
 }
 
 func (visitor *PrettyPrinter) WriteString(str string) {
@@ -271,8 +275,21 @@ func (visitor *PrettyPrinter) VisitEnumInt(enumInt EnumInt) {
 
 func (visitor *PrettyPrinter) VisitAlias(alias Alias) {
 	visitor.WriteString(alias.Name)
-	// TODO: add to map and print separately
-	// alias.Type.Visit(visitor)
+	if _, ok := visitor.aliases[alias.Name]; ok {
+		return
+	}
+	pp := PrettyPrinter{aliases: visitor.aliases}
+	alias.Type.Visit(&pp)
+	visitor.aliases[alias.Name] = pp.String()
+}
+
+func (visitor *PrettyPrinter) String() string {
+	s1 := stream.FromMap(visitor.aliases)
+	s2 := stream.Map(s1, func(kv fun.Pair[string, string]) string {
+		return fmt.Sprintf("%s = %s\n\n", kv.Left, kv.Right)
+	})
+	s3 := stream.CollectToSlice(s2)
+	return strings.Join(s3, "") + visitor.Builder.String()
 }
 
 func main() {
@@ -282,7 +299,9 @@ func main() {
 		List{String},
 	}}}
 
-	tsv := PrettyPrinter{}
+	tsv := PrettyPrinter{
+		aliases: make(map[string]string),
+	}
 	BttvEmotesDB.Visit(&tsv)
 	fmt.Println(tsv.String())
 }
