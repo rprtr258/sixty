@@ -11,7 +11,10 @@ import (
 // TODO: own Log2 on uint
 
 type TypeVisitor interface {
-	VisitKind(Kind)
+	VisitBit(Bit)
+	VisitInt(Int)
+	VisitUint(Uint)
+	VisitRune(Rune)
 	VisitProduct(Product)
 	VisitCoproduct(Coproduct)
 	VisitList(List)
@@ -24,21 +27,76 @@ type TypeVisitor interface {
 
 type Type interface {
 	Visit(TypeVisitor)
-	// TODO: move to visitors
-	// Size() fun.Option[uint]
 }
 
-type Kind uint
+type Bit struct{}
 
-const (
-	Bit Kind = iota
-	Int
-	Uint
-	Rune
-)
+func (bit Bit) Visit(visitor TypeVisitor) { visitor.VisitBit(bit) }
 
-func (kind Kind) Visit(visitor TypeVisitor) { visitor.VisitKind(kind) }
+type Int struct{}
 
+func (intt Int) Visit(visitor TypeVisitor) { visitor.VisitInt(intt) }
+
+type Uint struct{}
+
+func (uintt Uint) Visit(visitor TypeVisitor) { visitor.VisitUint(uintt) }
+
+type Rune struct{}
+
+func (runee Rune) Visit(visitor TypeVisitor) { visitor.VisitRune(runee) }
+
+type Product struct {
+	Fields []Type
+}
+
+func (product Product) Visit(visitor TypeVisitor) { visitor.VisitProduct(product) }
+
+type Coproduct struct {
+	Variants []Type
+}
+
+func (coproduct Coproduct) Visit(visitor TypeVisitor) { visitor.VisitCoproduct(coproduct) }
+
+type List struct {
+	Type
+}
+
+func (list List) Visit(visitor TypeVisitor) { visitor.VisitList(list) }
+
+type Array struct {
+	Type
+	Count uint
+}
+
+func (array Array) Visit(visitor TypeVisitor) { visitor.VisitArray(array) }
+
+type Optional struct {
+	Type
+}
+
+func (optional Optional) Visit(visitor TypeVisitor) { visitor.VisitOptional(optional) }
+
+type Enum struct {
+	Values []string
+}
+
+func (enum Enum) Visit(visitor TypeVisitor) { visitor.VisitEnum(enum) }
+
+type EnumInt struct {
+	Min int
+	Max int
+}
+
+func (enumInt EnumInt) Visit(visitor TypeVisitor) { visitor.VisitEnumInt(enumInt) }
+
+type Alias struct {
+	Type
+	Name string
+}
+
+func (alias Alias) Visit(visitor TypeVisitor) { visitor.VisitAlias(alias) }
+
+// TODO: move to visitor
 // func (kind Kind) Size() fun.Option[uint] {
 // 	switch kind {
 // 	case Bit:
@@ -53,12 +111,6 @@ func (kind Kind) Visit(visitor TypeVisitor) { visitor.VisitKind(kind) }
 // 		panic(fmt.Sprintf("Unknown kind: %d", kind))
 // 	}
 // }
-
-type Product struct {
-	Fields []Type
-}
-
-func (product Product) Visit(visitor TypeVisitor) { visitor.VisitProduct(product) }
 
 // func (product Product) Size() fun.Option[uint] {
 // 	if len(product.Fields) == 0 {
@@ -76,12 +128,6 @@ func (product Product) Visit(visitor TypeVisitor) { visitor.VisitProduct(product
 // 		stream.FromSlice(product.Fields),
 // 	)
 // }
-
-type Coproduct struct {
-	Variants []Type
-}
-
-func (coproduct Coproduct) Visit(visitor TypeVisitor) { visitor.VisitCoproduct(coproduct) }
 
 // func (coproduct Coproduct) Size() fun.Option[uint] {
 // 	if len(coproduct.Variants) == 0 {
@@ -107,20 +153,7 @@ func (coproduct Coproduct) Visit(visitor TypeVisitor) { visitor.VisitCoproduct(c
 // 	})
 // }
 
-type List struct {
-	Type
-}
-
-func (list List) Visit(visitor TypeVisitor) { visitor.VisitList(list) }
-
 // func (List) Size() fun.Option[uint] { return fun.None[uint]() }
-
-type Array struct {
-	Type
-	Count uint
-}
-
-func (array Array) Visit(visitor TypeVisitor) { visitor.VisitArray(array) }
 
 // func (array Array) Size() fun.Option[uint] {
 // 	return fun.Map(
@@ -129,12 +162,6 @@ func (array Array) Visit(visitor TypeVisitor) { visitor.VisitArray(array) }
 // 	)
 // }
 
-type Optional struct {
-	Type
-}
-
-func (optional Optional) Visit(visitor TypeVisitor) { visitor.VisitOptional(optional) }
-
 // func (optional Optional) Size() fun.Option[uint] {
 // 	return fun.Map(
 // 		optional.Type.Size(),
@@ -142,22 +169,9 @@ func (optional Optional) Visit(visitor TypeVisitor) { visitor.VisitOptional(opti
 // 	)
 // }
 
-type Enum struct {
-	Values []string
-}
-
-func (enum Enum) Visit(visitor TypeVisitor) { visitor.VisitEnum(enum) }
-
 // func (enum Enum) Size() fun.Option[uint] {
 // 	return fun.Some(uint(math.Ceil(math.Log2(float64(len(enum.Values))))))
 // }
-
-type EnumInt struct {
-	Min int
-	Max int
-}
-
-func (enumInt EnumInt) Visit(visitor TypeVisitor) { visitor.VisitEnumInt(enumInt) }
 
 // func (enumInt EnumInt) Size() fun.Option[uint] {
 // 	if enumInt.Max < enumInt.Min {
@@ -165,13 +179,6 @@ func (enumInt EnumInt) Visit(visitor TypeVisitor) { visitor.VisitEnumInt(enumInt
 // 	}
 // 	return fun.Some(uint(math.Ceil(math.Log2(float64(enumInt.Max - enumInt.Min)))))
 // }
-
-type Alias struct {
-	Type
-	Name string
-}
-
-func (alias Alias) Visit(visitor TypeVisitor) { visitor.VisitAlias(alias) }
 
 // type TypeWithMetadata struct {
 // 	Type
@@ -194,19 +201,20 @@ func (visitor *PrettyPrinter) WriteString(str string) {
 	visitor.Builder.WriteString(str)
 }
 
-func (visitor *PrettyPrinter) VisitKind(kind Kind) {
-	switch kind {
-	case Bit:
-		visitor.WriteString("bit")
-	case Int:
-		visitor.WriteString("int")
-	case Uint:
-		visitor.WriteString("uint")
-	case Rune:
-		visitor.WriteString("rune")
-	default:
-		panic(fmt.Sprintf("Unknown kind: %d", kind))
-	}
+func (visitor *PrettyPrinter) VisitBit(Bit) {
+	visitor.WriteString("bit")
+}
+
+func (visitor *PrettyPrinter) VisitInt(Int) {
+	visitor.WriteString("int")
+}
+
+func (visitor *PrettyPrinter) VisitUint(Uint) {
+	visitor.WriteString("uint")
+}
+
+func (visitor *PrettyPrinter) VisitRune(Rune) {
+	visitor.WriteString("rune")
 }
 
 func (visitor *PrettyPrinter) VisitProduct(product Product) {
@@ -293,7 +301,7 @@ func (visitor *PrettyPrinter) String() string {
 }
 
 func main() {
-	String := Alias{List{Rune}, "string"}
+	String := Alias{List{Rune{}}, "string"}
 	BttvEmotesDB := List{Product{[]Type{
 		String,
 		List{String},
