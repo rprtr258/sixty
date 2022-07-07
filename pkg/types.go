@@ -75,6 +75,22 @@ type TypeVisitor interface {
 	VisitAlias(Alias)
 }
 
+// TODO: make only one kind of visitor
+type EncoderVisitor interface {
+	VisitBit(Bit, BitValue)
+	VisitInt(Int, IntValue)
+	VisitUint(Uint, UintValue)
+	VisitRune(Rune, RuneValue)
+	VisitEnum(Enum, EnumValue)
+	VisitEnumInt(EnumInt, EnumIntValue)
+	VisitProduct(Product, ProductValue)
+	VisitCoproduct(Coproduct, CoproductValue)
+	VisitList(List, ListValue)
+	VisitArray(Array, ArrayValue)
+	VisitOptional(Optional, OptionalValue)
+	VisitAlias(Alias, AliasValue)
+}
+
 // TODO: rename to schema?
 type Type interface {
 	Visit(TypeVisitor)
@@ -84,7 +100,7 @@ type Type interface {
 // TODO: is needed?
 type TypeValue interface {
 	isTypeValue()
-	// TODO: get type?
+	Type() Type
 }
 
 type Bit struct{}
@@ -94,6 +110,7 @@ func (bit Bit) Visit(visitor TypeVisitor) { visitor.VisitBit(bit) }
 type BitValue bool
 
 func (BitValue) isTypeValue() {}
+func (BitValue) Type() Type   { return Bit{} }
 
 type Int struct{}
 
@@ -102,6 +119,7 @@ func (intt Int) Visit(visitor TypeVisitor) { visitor.VisitInt(intt) }
 type IntValue int
 
 func (IntValue) isTypeValue() {}
+func (IntValue) Type() Type   { return Int{} }
 
 type Uint struct{}
 
@@ -110,6 +128,7 @@ func (uintt Uint) Visit(visitor TypeVisitor) { visitor.VisitUint(uintt) }
 type UintValue uint
 
 func (UintValue) isTypeValue() {}
+func (UintValue) Type() Type   { return Uint{} }
 
 type Rune struct{}
 
@@ -118,6 +137,7 @@ func (runee Rune) Visit(visitor TypeVisitor) { visitor.VisitRune(runee) }
 type RuneValue rune
 
 func (RuneValue) isTypeValue() {}
+func (RuneValue) Type() Type   { return Rune{} }
 
 type Enum struct {
 	Values []string
@@ -128,6 +148,7 @@ func (enum Enum) Visit(visitor TypeVisitor) { visitor.VisitEnum(enum) }
 type EnumValue uint
 
 func (EnumValue) isTypeValue() {}
+func (EnumValue) Type() Type   { return Enum{} }
 
 type EnumInt struct {
 	Min int
@@ -139,6 +160,7 @@ func (enumInt EnumInt) Visit(visitor TypeVisitor) { visitor.VisitEnumInt(enumInt
 type EnumIntValue int
 
 func (EnumIntValue) isTypeValue() {}
+func (EnumIntValue) Type() Type   { return EnumInt{} }
 
 type Product []Type
 
@@ -147,6 +169,7 @@ func (product Product) Visit(visitor TypeVisitor) { visitor.VisitProduct(product
 type ProductValue []TypeValue
 
 func (ProductValue) isTypeValue() {}
+func (ProductValue) Type() Type   { return Product{} }
 
 type Coproduct []Type
 
@@ -158,6 +181,7 @@ type CoproductValue struct {
 }
 
 func (CoproductValue) isTypeValue() {}
+func (CoproductValue) Type() Type   { return Coproduct{} }
 
 type List struct {
 	Type
@@ -168,6 +192,7 @@ func (list List) Visit(visitor TypeVisitor) { visitor.VisitList(list) }
 type ListValue []TypeValue
 
 func (ListValue) isTypeValue() {}
+func (ListValue) Type() Type   { return List{} }
 
 type Array struct {
 	Type
@@ -179,6 +204,7 @@ func (array Array) Visit(visitor TypeVisitor) { visitor.VisitArray(array) }
 type ArrayValue []TypeValue
 
 func (ArrayValue) isTypeValue() {}
+func (ArrayValue) Type() Type   { return Array{} }
 
 type Optional struct {
 	Type
@@ -186,16 +212,29 @@ type Optional struct {
 
 func (optional Optional) Visit(visitor TypeVisitor) { visitor.VisitOptional(optional) }
 
-type OptionalValue struct{ TypeValue }
+type OptionalValue struct {
+	TypeValue
+	IsValid bool
+}
 
 func (OptionalValue) isTypeValue() {}
+func (OptionalValue) Type() Type   { return Optional{} }
 
+// TODO: alias in alias???
 type Alias struct {
 	Type
 	Name string
 }
 
 func (alias Alias) Visit(visitor TypeVisitor) { visitor.VisitAlias(alias) }
+
+type AliasValue struct {
+	Name  string
+	Value TypeValue
+}
+
+func (AliasValue) isTypeValue() {}
+func (AliasValue) Type() Type   { return Alias{} }
 
 // type TypeWithMetadata struct {
 // 	Type
