@@ -51,6 +51,14 @@ func (r *SchemaReader) ParseCommaSeparatedTypes(endToken string) (res []sixty.Ty
 func (r *SchemaReader) ParseType() sixty.Type {
 	token := r.Next()
 	switch token {
+	case "bit":
+		return sixty.Bit{}
+	case "int":
+		return sixty.Int{}
+	case "uint":
+		return sixty.Uint{}
+	case "rune":
+		return sixty.Rune{}
 	case "[":
 		nextToken := r.Next()
 		if nextToken == "]" {
@@ -67,7 +75,24 @@ func (r *SchemaReader) ParseType() sixty.Type {
 			}
 		}
 	case "(":
+		nextToken := r.Peek()
+		if min, err := strconv.Atoi(nextToken); err == nil {
+			r.Next()
+			r.Next() // TODO: assert ..
+			max, err := strconv.Atoi(r.Next())
+			if err != nil {
+				panic(err.Error())
+			}
+			return sixty.EnumInt{
+				Min: min,
+				Max: max,
+			}
+		}
 		return sixty.Product(r.ParseCommaSeparatedTypes(")"))
+	case "{":
+		return sixty.Coproduct(r.ParseCommaSeparatedTypes("}"))
+	// TODO: enum
+	// TODO: alias
 	case "std:string":
 		return sixty.String
 	default:
