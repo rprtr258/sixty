@@ -2,6 +2,11 @@ package sixty
 
 import "fmt"
 
+var String = Alias{
+	Type: List{Type: Rune{}},
+	Name: "std:string",
+}
+
 type AccumVisitor[A any] interface {
 	VisitBit(Bit) A
 	VisitInt(Int) A

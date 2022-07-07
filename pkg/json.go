@@ -24,8 +24,18 @@ func VisitValue(t Type, val TypeValue, visitor interface {
 	VisitArray(Array, ArrayValue)
 	VisitOptional(Optional, OptionalValue)
 	VisitAlias(Alias, AliasValue)
+	VisitString(string)
 }) {
 	switch {
+	case t == String:
+		// TODO: check val is string
+		s := val.(AliasValue)
+		var b strings.Builder
+		for _, c := range s.Value.(ListValue) {
+			cc := c.(RuneValue)
+			b.WriteRune(rune(cc))
+		}
+		visitor.VisitString(b.String())
 	case checkTypeValue[Bit, BitValue](t, val):
 		visitor.VisitBit(t.(Bit), val.(BitValue))
 	case checkTypeValue[Int, IntValue](t, val):
@@ -60,6 +70,9 @@ type JsonEncoder struct {
 	builder strings.Builder
 }
 
+func (j *JsonEncoder) VisitString(s string) {
+	j.builder.WriteString(fmt.Sprintf(`"%s"`, s))
+}
 func (j *JsonEncoder) VisitBit(_ Bit, bit BitValue) {
 	if bit {
 		j.builder.WriteString("true")
@@ -85,7 +98,7 @@ func (j *JsonEncoder) VisitEnumInt(_ EnumInt, n EnumIntValue) {
 func (j *JsonEncoder) VisitProduct(product Product, p ProductValue) {
 	j.builder.WriteString("{")
 	for i, x := range p {
-		if checkTypeValue[Alias, AliasValue](product[i], x) {
+		if checkTypeValue[Alias, AliasValue](product[i], x) && product[i].(Alias).Name[:4] != "std:" {
 			j.builder.WriteString(fmt.Sprintf(`"%s":`, (product[i]).(Alias).Name))
 			VisitValue(product[i].(Alias).Type, x.(AliasValue).Value, j)
 		} else {

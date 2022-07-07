@@ -18,13 +18,9 @@ func stoS(s string) sixty.AliasValue {
 }
 
 func main() {
-	String := sixty.Alias{
-		Type: sixty.List{Type: sixty.Rune{}},
-		Name: "string",
-	}
 	BttvEmotesDB := sixty.List{Type: sixty.Product{
-		String,
-		sixty.List{Type: String},
+		sixty.String,
+		sixty.List{Type: sixty.String},
 	}}
 
 	tsv := sixty.NewPrettyPrinter()
