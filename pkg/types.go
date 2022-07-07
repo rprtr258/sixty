@@ -17,43 +17,47 @@ type AccumVisitor[A any] interface {
 	VisitAlias(A, string) A
 }
 
-func DFS[A any](t Type, visitor AccumVisitor[A]) A {
-	switch tt := t.(type) {
-	case Bit:
-		return visitor.VisitBit(tt)
-	case Int:
-		return visitor.VisitInt(tt)
-	case Uint:
-		return visitor.VisitUint(tt)
-	case Rune:
-		return visitor.VisitRune(tt)
-	case Enum:
-		return visitor.VisitEnum(tt)
-	case EnumInt:
-		return visitor.VisitEnumInt(tt)
-	case Product:
-		var product []A
-		for _, x := range tt {
-			product = append(product, DFS(x, visitor))
+func DFSFactory[A any](visitor AccumVisitor[A]) func(Type) A {
+	var res func(Type) A
+	res = func(t Type) A {
+		switch tt := t.(type) {
+		case Bit:
+			return visitor.VisitBit(tt)
+		case Int:
+			return visitor.VisitInt(tt)
+		case Uint:
+			return visitor.VisitUint(tt)
+		case Rune:
+			return visitor.VisitRune(tt)
+		case Enum:
+			return visitor.VisitEnum(tt)
+		case EnumInt:
+			return visitor.VisitEnumInt(tt)
+		case Product:
+			var product []A
+			for _, x := range tt {
+				product = append(product, res(x))
+			}
+			return visitor.VisitProduct(product)
+		case Coproduct:
+			var coproduct []A
+			for _, x := range tt {
+				coproduct = append(coproduct, res(x))
+			}
+			return visitor.VisitCoproduct(coproduct)
+		case List:
+			return visitor.VisitList(res(tt.Type))
+		case Array:
+			return visitor.VisitArray(res(tt.Type), tt.Count)
+		case Optional:
+			return visitor.VisitOptional(res(tt.Type))
+		case Alias:
+			return visitor.VisitAlias(res(tt.Type), tt.Name)
+		default:
+			panic(fmt.Sprintf("unknown type: %T", tt))
 		}
-		return visitor.VisitProduct(product)
-	case Coproduct:
-		var coproduct []A
-		for _, x := range tt {
-			coproduct = append(coproduct, DFS(x, visitor))
-		}
-		return visitor.VisitCoproduct(coproduct)
-	case List:
-		return visitor.VisitList(DFS(tt.Type, visitor))
-	case Array:
-		return visitor.VisitArray(DFS(tt.Type, visitor), tt.Count)
-	case Optional:
-		return visitor.VisitOptional(DFS(tt.Type, visitor))
-	case Alias:
-		return visitor.VisitAlias(DFS(tt.Type, visitor), tt.Name)
-	default:
-		panic(fmt.Sprintf("unknown type: %T", tt))
 	}
+	return res
 }
 
 type TypeVisitor interface {

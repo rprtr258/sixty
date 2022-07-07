@@ -19,5 +19,5 @@ func main() {
 	tsv := sixty.NewPrettyPrinter()
 	BttvEmotesDB.Visit(&tsv)
 	fmt.Println(tsv.String())
-	fmt.Println(sixty.DFS(BttvEmotesDB, (sixty.AccumVisitor[sixty.Size])(sixty.SizeVisitor{})))
+	fmt.Println(sixty.SizeVisitor(BttvEmotesDB))
 }
