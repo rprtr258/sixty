@@ -1,4 +1,4 @@
-package main
+package sixty
 
 import (
 	"fmt"
@@ -8,34 +8,42 @@ import (
 	"github.com/rprtr258/go-flow/stream"
 )
 
-type PrettyPrinter struct {
-	strings.Builder
+type prettyPrinter struct {
+	builder strings.Builder
 	ident   uint
 	aliases map[string]string
 }
 
-func (visitor *PrettyPrinter) writeString(str string) {
-	visitor.Builder.WriteString(strings.Repeat(" ", int(visitor.ident*2)))
-	visitor.Builder.WriteString(str)
+func NewPrettyPrinter() prettyPrinter {
+	return prettyPrinter{
+		ident:   0,
+		aliases: make(map[string]string),
+		builder: strings.Builder{},
+	}
 }
 
-func (visitor *PrettyPrinter) VisitBit(Bit) {
+func (visitor *prettyPrinter) writeString(str string) {
+	visitor.builder.WriteString(strings.Repeat(" ", int(visitor.ident*2)))
+	visitor.builder.WriteString(str)
+}
+
+func (visitor *prettyPrinter) VisitBit(Bit) {
 	visitor.writeString("bit")
 }
 
-func (visitor *PrettyPrinter) VisitInt(Int) {
+func (visitor *prettyPrinter) VisitInt(Int) {
 	visitor.writeString("int")
 }
 
-func (visitor *PrettyPrinter) VisitUint(Uint) {
+func (visitor *prettyPrinter) VisitUint(Uint) {
 	visitor.writeString("uint")
 }
 
-func (visitor *PrettyPrinter) VisitRune(Rune) {
+func (visitor *prettyPrinter) VisitRune(Rune) {
 	visitor.writeString("rune")
 }
 
-func (visitor *PrettyPrinter) VisitProduct(product Product) {
+func (visitor *prettyPrinter) VisitProduct(product Product) {
 	visitor.writeString("(\n")
 	visitor.ident++
 
@@ -43,7 +51,7 @@ func (visitor *PrettyPrinter) VisitProduct(product Product) {
 	for i, field := range product {
 		field.Visit(visitor)
 		if i < n-1 {
-			visitor.Builder.WriteString(",\n")
+			visitor.builder.WriteString(",\n")
 		}
 	}
 
@@ -51,7 +59,7 @@ func (visitor *PrettyPrinter) VisitProduct(product Product) {
 	visitor.writeString("\n)")
 }
 
-func (visitor *PrettyPrinter) VisitCoproduct(coproduct Coproduct) {
+func (visitor *prettyPrinter) VisitCoproduct(coproduct Coproduct) {
 	visitor.writeString("[\n")
 	visitor.ident++
 
@@ -59,7 +67,7 @@ func (visitor *PrettyPrinter) VisitCoproduct(coproduct Coproduct) {
 	for i, field := range coproduct {
 		field.Visit(visitor)
 		if i < n-1 {
-			visitor.Builder.WriteString(",")
+			visitor.builder.WriteString(",")
 		}
 	}
 
@@ -67,7 +75,7 @@ func (visitor *PrettyPrinter) VisitCoproduct(coproduct Coproduct) {
 	visitor.writeString("\n]")
 }
 
-func (visitor *PrettyPrinter) VisitList(list List) {
+func (visitor *prettyPrinter) VisitList(list List) {
 	visitor.writeString("[]")
 	tmp := visitor.ident
 	visitor.ident = 0
@@ -75,7 +83,7 @@ func (visitor *PrettyPrinter) VisitList(list List) {
 	visitor.ident = tmp
 }
 
-func (visitor *PrettyPrinter) VisitArray(array Array) {
+func (visitor *prettyPrinter) VisitArray(array Array) {
 	visitor.writeString(fmt.Sprintf("[%d]", array.Count))
 	tmp := visitor.ident
 	visitor.ident = 0
@@ -83,7 +91,7 @@ func (visitor *PrettyPrinter) VisitArray(array Array) {
 	visitor.ident = tmp
 }
 
-func (visitor *PrettyPrinter) VisitOptional(optional Optional) {
+func (visitor *prettyPrinter) VisitOptional(optional Optional) {
 	visitor.writeString("?")
 	tmp := visitor.ident
 	visitor.ident = 0
@@ -91,29 +99,29 @@ func (visitor *PrettyPrinter) VisitOptional(optional Optional) {
 	visitor.ident = tmp
 }
 
-func (visitor *PrettyPrinter) VisitEnum(enum Enum) {
+func (visitor *prettyPrinter) VisitEnum(enum Enum) {
 	visitor.writeString(fmt.Sprintf("{%s}", strings.Join(enum.Values, ", ")))
 }
 
-func (visitor *PrettyPrinter) VisitEnumInt(enumInt EnumInt) {
+func (visitor *prettyPrinter) VisitEnumInt(enumInt EnumInt) {
 	visitor.writeString(fmt.Sprintf("[%d..%d]", enumInt.Min, enumInt.Max))
 }
 
-func (visitor *PrettyPrinter) VisitAlias(alias Alias) {
+func (visitor *prettyPrinter) VisitAlias(alias Alias) {
 	visitor.writeString(alias.Name)
 	if _, ok := visitor.aliases[alias.Name]; ok {
 		return
 	}
-	pp := PrettyPrinter{aliases: visitor.aliases}
+	pp := prettyPrinter{aliases: visitor.aliases}
 	alias.Type.Visit(&pp)
 	visitor.aliases[alias.Name] = pp.String()
 }
 
-func (visitor *PrettyPrinter) String() string {
+func (visitor *prettyPrinter) String() string {
 	s1 := stream.FromMap(visitor.aliases)
 	s2 := stream.Map(s1, func(kv fun.Pair[string, string]) string {
 		return fmt.Sprintf("%s = %s\n\n", kv.Left, kv.Right)
 	})
 	s3 := stream.CollectToSlice(s2)
-	return strings.Join(s3, "") + visitor.Builder.String()
+	return strings.Join(s3, "") + visitor.builder.String()
 }
