@@ -9,6 +9,7 @@ import (
 	// TODO: move everything to root
 	sixty "github.com/rprtr258/sixty/pkg"
 	bytesenc "github.com/rprtr258/sixty/pkg/byte"
+	"github.com/rprtr258/sixty/pkg/json"
 )
 
 var (
@@ -51,16 +52,15 @@ func stringToString(s string) sixty.SchemaValue {
 	return sixty.StringValue(s)
 }
 
-// func TestBttvDBJsonEncoder(t *testing.T) {
-// 	je := &sixty.JsonEncoder{}
-// 	sixty.VisitValue(bttvEmotesDB, bttvEmotesDBData, je)
-// 	assert.Equal(t, `[{"0":"Kappa","1":["KappaOwner1","KappaOwner2"]},{"0":"PogChamp","1":["PogChampOwner1","PogChampOwner2"]}]`, je.String())
-// }
+func TestBttvDBJsonEncoder(t *testing.T) {
+	buffer := bytes.Buffer{}
+	(&json.JsonEncoder{Buffer: &buffer}).Write(bttvEmotesDB, bttvEmotesDBData)
+	assert.Equal(t, bttvEmotesDBJson, buffer.String())
+}
 
 func TestBttvDBByteEncoder(t *testing.T) {
 	buffer := bytes.Buffer{}
-	encoder := &bytesenc.ByteEncoder{Buffer: &buffer}
-	encoder.Write(bttvEmotesDB, bttvEmotesDBData)
+	(&bytesenc.ByteEncoder{Buffer: &buffer}).Write(bttvEmotesDB, bttvEmotesDBData)
 	assert.Equal(t, bttvEmotesDBBytes, buffer.Bytes())
 }
 
