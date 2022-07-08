@@ -11,13 +11,13 @@ import (
 // TODO: byte decoder
 type ByteDecoder struct {
 	// TODO: make private
-	Buf *bytes.Buffer
+	Buffer *bytes.Buffer
 }
 
 func (j *ByteDecoder) readUint() uint {
 	// TODO: implement
 	// TODO: error handling
-	b, _ := j.Buf.ReadByte()
+	b, _ := j.Buffer.ReadByte()
 	switch {
 	case b < 128:
 		return uint(b)
@@ -40,13 +40,13 @@ func (j *ByteDecoder) VisitString() string {
 	s := make([]rune, 0, stringLength)
 	for i := uint(0); i < stringLength; i++ {
 		// TODO: rewrite
-		r, _, _ := j.Buf.ReadRune()
+		r, _, _ := j.Buffer.ReadRune()
 		s = append(s, r)
 	}
 	return string(s)
 }
 func (j *ByteDecoder) VisitBit(_ sixty.Bit) sixty.BitValue {
-	b, _ := j.Buf.ReadByte()
+	b, _ := j.Buffer.ReadByte()
 	switch b {
 	case 0:
 		return false
@@ -63,7 +63,7 @@ func (j *ByteDecoder) VisitUint(_ sixty.Uint) sixty.UintValue {
 	return sixty.UintValue(j.readUint())
 }
 func (j *ByteDecoder) VisitRune(_ sixty.Rune) sixty.RuneValue {
-	r, _, _ := j.Buf.ReadRune()
+	r, _, _ := j.Buffer.ReadRune()
 	return sixty.RuneValue(r)
 }
 func (j *ByteDecoder) VisitEnum(enum sixty.Enum) sixty.EnumValue {
@@ -107,7 +107,7 @@ func (j *ByteDecoder) VisitArray(array sixty.Array) sixty.ArrayValue {
 	return res
 }
 func (j *ByteDecoder) VisitOptional(optional sixty.Optional) sixty.OptionalValue {
-	isPresent, _ := j.Buf.ReadByte()
+	isPresent, _ := j.Buffer.ReadByte()
 	switch isPresent {
 	case 0:
 		return sixty.OptionalValue{IsValid: false}

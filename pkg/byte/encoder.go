@@ -1,8 +1,6 @@
 package bytesenc
 
 import (
-	"bytes"
-
 	sixty "github.com/rprtr258/sixty/pkg"
 )
 
@@ -11,14 +9,18 @@ import (
 // TODO: compress list/array of bits
 type ByteEncoder struct {
 	// TODO: make unexported
-	Builder *bytes.Buffer
+	Buffer interface {
+		WriteByte(byte) error
+		WriteString(string) (int, error)
+		WriteRune(rune) (int, error)
+	}
 }
 
 func (j *ByteEncoder) writeUint(x uint) {
 	// TODO: implement
 	switch {
 	case x < 128:
-		j.Builder.WriteByte(byte(x))
+		j.Buffer.WriteByte(byte(x))
 	}
 }
 func (j *ByteEncoder) writeInt(x int) {
@@ -32,13 +34,13 @@ func (j *ByteEncoder) writeInt(x int) {
 
 func (j *ByteEncoder) VisitString(s string) {
 	j.writeUint(uint(len(s)))
-	j.Builder.WriteString(s)
+	j.Buffer.WriteString(s)
 }
 func (j *ByteEncoder) VisitBit(_ sixty.Bit, bit sixty.BitValue) {
 	if bit {
-		j.Builder.WriteByte(1)
+		j.Buffer.WriteByte(1)
 	} else {
-		j.Builder.WriteByte(0)
+		j.Buffer.WriteByte(0)
 	}
 }
 func (j *ByteEncoder) VisitInt(_ sixty.Int, n sixty.IntValue) {
@@ -48,7 +50,7 @@ func (j *ByteEncoder) VisitUint(_ sixty.Uint, n sixty.UintValue) {
 	j.writeUint(uint(n))
 }
 func (j *ByteEncoder) VisitRune(_ sixty.Rune, r sixty.RuneValue) {
-	j.Builder.WriteRune(rune(r))
+	j.Buffer.WriteRune(rune(r))
 }
 func (j *ByteEncoder) VisitEnum(enum sixty.Enum, n sixty.EnumValue) {
 	j.writeUint(uint(n))
