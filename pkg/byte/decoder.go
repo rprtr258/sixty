@@ -78,7 +78,7 @@ func (j *ByteDecoder) VisitEnumInt(enumInt sixty.EnumInt) sixty.EnumIntValue {
 	return sixty.EnumIntValue(int(n) + enumInt.Min)
 }
 func (j *ByteDecoder) VisitProduct(product sixty.Product) sixty.ProductValue {
-	res := make([]sixty.TypeValue, 0, len(product))
+	res := make([]sixty.SchemaValue, 0, len(product))
 	for _, x := range product {
 		res = append(res, sixty.VisitValue2(x, j))
 	}
@@ -87,22 +87,22 @@ func (j *ByteDecoder) VisitProduct(product sixty.Product) sixty.ProductValue {
 func (j *ByteDecoder) VisitCoproduct(coproduct sixty.Coproduct) sixty.CoproductValue {
 	variant := j.readUint()
 	return sixty.CoproductValue{
-		TypeValue: sixty.VisitValue2(coproduct[variant], j),
-		Variant:   variant,
+		SchemaValue: sixty.VisitValue2(coproduct[variant], j),
+		Variant:     variant,
 	}
 }
 func (j *ByteDecoder) VisitList(list sixty.List) sixty.ListValue {
 	listLen := j.readUint()
-	res := make([]sixty.TypeValue, 0, listLen)
+	res := make([]sixty.SchemaValue, 0, listLen)
 	for i := uint(0); i < listLen; i++ {
-		res = append(res, sixty.VisitValue2(list.Type, j))
+		res = append(res, sixty.VisitValue2(list.Schema, j))
 	}
 	return res
 }
 func (j *ByteDecoder) VisitArray(array sixty.Array) sixty.ArrayValue {
-	res := make([]sixty.TypeValue, 0, array.Count)
+	res := make([]sixty.SchemaValue, 0, array.Count)
 	for i := uint(0); i < array.Count; i++ {
-		res = append(res, sixty.VisitValue2(array.Type, j))
+		res = append(res, sixty.VisitValue2(array.Schema, j))
 	}
 	return res
 }
@@ -113,8 +113,8 @@ func (j *ByteDecoder) VisitOptional(optional sixty.Optional) sixty.OptionalValue
 		return sixty.OptionalValue{IsValid: false}
 	case 1:
 		return sixty.OptionalValue{
-			TypeValue: sixty.VisitValue2(optional.Type, j),
-			IsValid:   false,
+			SchemaValue: sixty.VisitValue2(optional.Schema, j),
+			IsValid:     false,
 		}
 	default:
 		panic(fmt.Sprintf("option variant must be either 0 or 1, but it is %d", isPresent))
@@ -123,6 +123,6 @@ func (j *ByteDecoder) VisitOptional(optional sixty.Optional) sixty.OptionalValue
 func (j *ByteDecoder) VisitAlias(alias sixty.Alias) sixty.AliasValue {
 	return sixty.AliasValue{
 		Name:  alias.Name,
-		Value: sixty.VisitValue2(alias.Type, j),
+		Value: sixty.VisitValue2(alias.Schema, j),
 	}
 }

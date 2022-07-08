@@ -24,7 +24,7 @@ func (r *SchemaReader) Next() (res string) {
 	return
 }
 
-func (r *SchemaReader) ParseCommaSeparatedTypes(endToken string) (res []Type) {
+func (r *SchemaReader) ParseCommaSeparatedTypes(endToken string) (res []Schema) {
 	for {
 		res = append(res, r.ParseType())
 		nextToken := r.Next()
@@ -34,7 +34,7 @@ func (r *SchemaReader) ParseCommaSeparatedTypes(endToken string) (res []Type) {
 	}
 }
 
-func (r *SchemaReader) ParseType() Type {
+func (r *SchemaReader) ParseType() Schema {
 	token := r.Next()
 	switch token {
 	case "bit":
@@ -46,11 +46,11 @@ func (r *SchemaReader) ParseType() Type {
 	case "rune":
 		return Rune{}
 	case "?":
-		return Optional{Type: r.ParseType()}
+		return Optional{Schema: r.ParseType()}
 	case "[":
 		nextToken := r.Next()
 		if nextToken == "]" {
-			return List{Type: r.ParseType()}
+			return List{Schema: r.ParseType()}
 		} else {
 			arrayLength, err := strconv.Atoi(nextToken)
 			if err != nil {
@@ -58,8 +58,8 @@ func (r *SchemaReader) ParseType() Type {
 			}
 			r.Next() // TODO: assert "]"
 			return Array{
-				Type:  r.ParseType(),
-				Count: uint(arrayLength),
+				Schema: r.ParseType(),
+				Count:  uint(arrayLength),
 			}
 		}
 	case "(":
@@ -81,8 +81,8 @@ func (r *SchemaReader) ParseType() Type {
 		return Coproduct(r.ParseCommaSeparatedTypes("}"))
 	// TODO: enum
 	// TODO: alias
-	case "std:string":
-		return String
+	case string(StringKind):
+		return String{}
 	default:
 		panic(token)
 	}
@@ -95,12 +95,12 @@ func Tokenize(s string) SchemaReader {
 	}
 }
 
-func ParseSchema(s string) (Type, error) {
+func ParseSchema(s string) (Schema, error) {
 	reader := Tokenize(s)
 	return reader.ParseType(), nil
 }
 
-func MustParseSchema(s string) Type {
+func MustParseSchema(s string) Schema {
 	res, err := ParseSchema(s)
 	if err != nil {
 		panic(err)
