@@ -114,6 +114,7 @@ func (visitor *prettyPrinter) VisitAlias(alias Alias) {
 func (visitor *prettyPrinter) String() string {
 	s1 := stream.FromMap(visitor.aliases)
 	s2 := stream.Map(s1, func(kv fun.Pair[string, string]) string {
+		// TODO: don't print std:types
 		return fmt.Sprintf("%s = %s\n\n", kv.Left, kv.Right)
 	})
 	s3 := stream.CollectToSlice(s2)

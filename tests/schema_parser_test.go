@@ -1,7 +1,6 @@
 package sixty_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,8 +9,8 @@ import (
 )
 
 var bttvEmotesDB = sixty.List{Type: sixty.Product{
-	sixty.String,
-	sixty.List{Type: sixty.String},
+	sixty.String,                   // TODO: name as "emote"
+	sixty.List{Type: sixty.String}, // TODO: name as "ids"
 }}
 
 func stoS(s string) sixty.AliasValue {
@@ -25,13 +24,11 @@ func stoS(s string) sixty.AliasValue {
 	}
 }
 
-func exampleBttvEmotesDB() {
-	tsv := sixty.NewPrettyPrinter()
-	bttvEmotesDB.Visit(&tsv)
-	fmt.Println(tsv.String())
+func TestBttvDBSize(t *testing.T) {
+	assert.Equal(t, sixty.Inf, sixty.SizeVisitor(bttvEmotesDB))
+}
 
-	fmt.Println(sixty.SizeVisitor(bttvEmotesDB))
-
+func TestBttvDBJsonEncoder(t *testing.T) {
 	je := &sixty.JsonEncoder{}
 	data := sixty.ListValue{sixty.ProductValue{
 		stoS("Kappa"),
@@ -47,10 +44,10 @@ func exampleBttvEmotesDB() {
 		},
 	}}
 	sixty.VisitValue(bttvEmotesDB, data, je)
-	fmt.Println(je.String())
+	assert.Equal(t, `[{"0":"Kappa","1":["KappaOwner1","KappaOwner2"]},{"0":"PogChamp","1":["PogChampOwner1","PogChampOwner2"]}]`, je.String())
 }
 
-func TestBttvDBSchemaParse(t *testing.T) {
+func TestBttvDB(t *testing.T) {
 	schema, err := sixty.ParseSchema(`[](std:string,[]std:string)`)
 	assert.NoError(t, err)
 	assert.Equal(t, bttvEmotesDB, schema)
@@ -65,7 +62,12 @@ func TestBttvDBPrettyPrinter(t *testing.T) {
 )`, sixty.PrettyPrintSchema(bttvEmotesDB))
 }
 
-// schema, err := sixty.ParseSchema(`[](0..255)`)
-// if err != nil {
-// 	log.Fatalln(err.Error())
-// }
+func TestEnumInt(t *testing.T) {
+	schema, err := sixty.ParseSchema(`[](0..255)`)
+	assert.NoError(t, err)
+	assert.Equal(t, sixty.List{Type: sixty.EnumInt{
+		Min: 0,
+		Max: 255,
+	}}, schema)
+
+}
