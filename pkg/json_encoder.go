@@ -87,7 +87,7 @@ func (j *JsonEncoder) VisitUint(_ Uint, n UintValue) {
 	j.builder.WriteString(fmt.Sprint(n))
 }
 func (j *JsonEncoder) VisitRune(_ Rune, r RuneValue) {
-	j.builder.WriteString(fmt.Sprint(r))
+	j.builder.WriteString(fmt.Sprintf(`"%c"`, r))
 }
 func (j *JsonEncoder) VisitEnum(enum Enum, n EnumValue) {
 	j.builder.WriteString(enum.Values[n])
@@ -98,6 +98,7 @@ func (j *JsonEncoder) VisitEnumInt(_ EnumInt, n EnumIntValue) {
 func (j *JsonEncoder) VisitProduct(product Product, p ProductValue) {
 	j.builder.WriteString("{")
 	for i, x := range p {
+		// TODO: move out std:types as a separate case
 		if checkTypeValue[Alias, AliasValue](product[i], x) && product[i].(Alias).Name[:4] != "std:" {
 			j.builder.WriteString(fmt.Sprintf(`"%s":`, (product[i]).(Alias).Name))
 			VisitValue(product[i].(Alias).Type, x.(AliasValue).Value, j)

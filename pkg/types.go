@@ -1,6 +1,9 @@
 package sixty
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 var String = Alias{
 	Type: List{Type: Rune{}},
@@ -239,3 +242,8 @@ func (AliasValue) isTypeValue() {}
 
 // TODO: stupid printer
 // TODO: algebraic printer
+
+// TODO: own Log2 on int and uint
+func Log2(x int) uint {
+	return uint(math.Ceil(math.Log2(float64(x))))
+}
