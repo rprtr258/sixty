@@ -1,7 +1,6 @@
 package bytesenc
 
 import (
-	"bytes"
 	"fmt"
 
 	sixty "github.com/rprtr258/sixty/pkg"
@@ -11,7 +10,10 @@ import (
 // TODO: byte decoder
 type ByteDecoder struct {
 	// TODO: make private
-	Buffer *bytes.Buffer
+	Buffer interface {
+		ReadByte() (byte, error)
+		ReadRune() (rune, int, error)
+	}
 }
 
 func (j *ByteDecoder) readUint() uint {
