@@ -1,3 +1,4 @@
+// TODO: 100% cover
 package sixty_test
 
 import (
@@ -12,23 +13,23 @@ import (
 
 var (
 	bttvEmotesDB = sixty.List{Schema: sixty.Product{
-		sixty.String, // TODO: name as "emote"
+		sixty.String{}, // TODO: name as "emote"
 		sixty.List{
 			// TODO: change to const(?) length id
-			Schema: sixty.String,
+			Schema: sixty.String{},
 		}, // TODO: name as "ids"
 	}}
 	bttvEmotesDBData = sixty.ListValue{sixty.ProductValue{
-		stringToString("Kappa"),
+		sixty.StringValue("Kappa"),
 		sixty.ListValue{
-			stringToString("KappaOwner1"),
-			stringToString("KappaOwner2"),
+			sixty.StringValue("KappaOwner1"),
+			sixty.StringValue("KappaOwner2"),
 		},
 	}, sixty.ProductValue{
-		stringToString("PogChamp"),
+		sixty.StringValue("PogChamp"),
 		sixty.ListValue{
-			stringToString("PogChampOwner1"),
-			stringToString("PogChampOwner2"),
+			sixty.StringValue("PogChampOwner1"),
+			sixty.StringValue("PogChampOwner2"),
 		},
 	}}
 	bttvEmotesDBBytes = []byte{
@@ -44,18 +45,6 @@ var (
 	}
 	bttvEmotesDBJson = `[{"0":"Kappa","1":["KappaOwner1","KappaOwner2"]},{"0":"PogChamp","1":["PogChampOwner1","PogChampOwner2"]}]`
 )
-
-// TODO: use to encode string and other primitive types
-func stringToString(s string) sixty.SchemaValue {
-	var l sixty.ListValue
-	for _, c := range s {
-		l = append(l, sixty.RuneValue(c))
-	}
-	return sixty.AliasValue{
-		Name:  sixty.String.Name,
-		Value: l,
-	}
-}
 
 func TestBttvDBJsonEncoder(t *testing.T) {
 	je := &sixty.JsonEncoder{}

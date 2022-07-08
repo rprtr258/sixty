@@ -67,3 +67,5 @@ func (v *Validator) VisitAlias(alias Alias) {
 	}
 	alias.Schema.Visit(v)
 }
+
+func (v *Validator) VisitString(String) {}

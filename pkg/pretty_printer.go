@@ -66,7 +66,7 @@ func (visitor *prettyPrinter) VisitCoproduct(coproduct Coproduct) {
 	}
 
 	visitor.ident--
-	visitor.writeString("}")
+	visitor.builder.WriteRune('}')
 }
 
 func (visitor *prettyPrinter) VisitList(list List) {
@@ -78,7 +78,9 @@ func (visitor *prettyPrinter) VisitList(list List) {
 }
 
 func (visitor *prettyPrinter) VisitArray(array Array) {
-	visitor.writeString(fmt.Sprintf("[%d]", array.Count))
+	visitor.builder.WriteRune('[')
+	visitor.writeString(fmt.Sprint(array.Count))
+	visitor.builder.WriteRune(']')
 	tmp := visitor.ident
 	visitor.ident = 0
 	array.Schema.Visit(visitor)
@@ -86,7 +88,7 @@ func (visitor *prettyPrinter) VisitArray(array Array) {
 }
 
 func (visitor *prettyPrinter) VisitOptional(optional Optional) {
-	visitor.writeString("?")
+	visitor.builder.WriteRune('?')
 	tmp := visitor.ident
 	visitor.ident = 0
 	optional.Schema.Visit(visitor)
@@ -106,12 +108,16 @@ func (visitor *prettyPrinter) VisitAlias(alias Alias) {
 	if _, ok := visitor.aliases[alias.Name]; ok {
 		return
 	}
-	pp := prettyPrinter{aliases: visitor.aliases}
-	alias.Schema.Visit(&pp)
-	visitor.aliases[alias.Name] = pp.String()
+	visitor.aliases[alias.Name] = PrettyPrintSchema(alias.Schema)
 }
 
-func (visitor *prettyPrinter) String() string {
+func (visitor *prettyPrinter) VisitString(s String) {
+	visitor.builder.WriteString(string(s.LogicalKind()))
+}
+
+func PrettyPrintSchema(t Schema) string {
+	visitor := NewPrettyPrinter()
+	t.Visit(&visitor)
 	s1 := stream.FromMap(visitor.aliases)
 	s2 := stream.Map(s1, func(kv fun.Pair[string, string]) string {
 		// TODO: don't print std:types
@@ -119,10 +125,4 @@ func (visitor *prettyPrinter) String() string {
 	})
 	s3 := stream.CollectToSlice(s2)
 	return strings.Join(s3, "") + visitor.builder.String()
-}
-
-func PrettyPrintSchema(t Schema) string {
-	tsv := NewPrettyPrinter()
-	t.Visit(&tsv)
-	return tsv.String()
 }

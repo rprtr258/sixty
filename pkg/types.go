@@ -5,10 +5,23 @@ import (
 	"math"
 )
 
-var String = Alias{
-	Schema: List{Schema: Rune{}},
-	Name:   "std:string",
-}
+type Kind uint
+
+const (
+	BitKind Kind = iota
+	IntKind
+	UintKind
+	RuneKind
+	EnumKind
+	EnumIntKind
+	ProductKind
+	CoproductKind
+	ListKind
+	ArrayKind
+	OptionalKind
+	AliasKind
+	Logical
+)
 
 type AccumVisitor[A any] interface {
 	VisitBit(Bit) A
@@ -81,6 +94,7 @@ type SchemaVisitor interface {
 	VisitArray(Array)
 	VisitOptional(Optional)
 	VisitAlias(Alias)
+	VisitString(String)
 }
 
 // TODO: make only one kind of visitor
@@ -98,23 +112,6 @@ type EncoderVisitor interface {
 	VisitOptional(Optional, OptionalValue)
 	VisitAlias(Alias, AliasValue)
 }
-
-type Kind uint
-
-const (
-	BitKind Kind = iota
-	IntKind
-	UintKind
-	RuneKind
-	EnumKind
-	EnumIntKind
-	ProductKind
-	CoproductKind
-	ListKind
-	ArrayKind
-	OptionalKind
-	AliasKind
-)
 
 type Schema interface {
 	Visit(SchemaVisitor)
@@ -158,6 +155,7 @@ type UintValue uint
 func (UintValue) isSchemaValue() {}
 func (UintValue) Kind() Kind     { return UintKind }
 
+// TODO: optimise out passing by
 type Rune struct{}
 
 func (runee Rune) Visit(visitor SchemaVisitor) { visitor.VisitRune(runee) }
@@ -289,3 +287,44 @@ func (AliasValue) Kind() Kind     { return AliasKind }
 func Log2(x int) uint {
 	return uint(math.Ceil(math.Log2(float64(x))))
 }
+
+type LogicalScheme interface {
+	Schema() Schema
+	LogicalKind() LogicalKind
+}
+
+type LogicalKind string
+
+const (
+	StringKind LogicalKind = "std:string"
+	// TODO: DateKind     LogicalKind = "std:date"
+	// TODO: DatetimeKind LogicalKind = "std:datetime"
+	// TODO: datetime with millis, micros, nanos
+	// TODO: decimal
+)
+
+func (kind LogicalKind) Schema() Schema {
+	switch kind {
+	case StringKind:
+		return List{Schema: Rune{}}
+	// case DateKind:
+	// 	return Int{}
+	// case DatetimeKind:
+	// 	return Int{}
+	default:
+		panic(fmt.Sprintf("unknown kind: %v", kind))
+	}
+}
+
+type String struct{}
+
+func (s String) Visit(visitor SchemaVisitor) { visitor.VisitString(s) }
+func (String) Kind() Kind                    { return ListKind }
+
+func (String) Schema() Schema           { return List{Schema: Rune{}} }
+func (String) LogicalKind() LogicalKind { return StringKind }
+
+type StringValue string
+
+func (StringValue) isSchemaValue() {}
+func (StringValue) Kind() Kind     { return ListKind }

@@ -82,7 +82,7 @@ func (r *SchemaReader) ParseSchema() Schema {
 	// TODO: enum
 	// TODO: alias
 	case "std:string":
-		return String
+		return StringKind.Schema()
 	default:
 		panic(token)
 	}

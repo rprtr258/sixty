@@ -7,6 +7,7 @@ import (
 // TODO: bit encoder/decoder
 // TODO: byte decoder
 // TODO: compress list/array of bits
+// TODO: top level list/array/string goes without length
 type ByteEncoder struct {
 	// TODO: make unexported
 	Buffer interface {
@@ -27,7 +28,8 @@ func (j *ByteEncoder) writeInt(x int) {
 	if x > 0 {
 		j.writeUint(uint(x) * 2)
 	} else {
-		// TODO: fix and test overflow/steal from protobuf
+		// TODO: fix and test overflow
+		// TODO: writeUint((x << 1) ^ (x >> 31)) for int32
 		j.writeUint(uint(-2*x) - 1)
 	}
 }

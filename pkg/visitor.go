@@ -20,15 +20,20 @@ func VisitValue(t Schema, val SchemaValue, visitor interface {
 	VisitAlias(Alias, AliasValue)
 	VisitString(string)
 }) {
-	if t == String {
-		// TODO: check val is string
-		s := val.(AliasValue)
-		var b strings.Builder
-		for _, c := range s.Value.(ListValue) {
-			cc := c.(RuneValue)
-			b.WriteRune(rune(cc))
+	if lVal, ok := t.(LogicalScheme); ok {
+		switch lVal.LogicalKind() {
+		case StringKind:
+			// TODO: check val is string
+			s := val.(AliasValue)
+			var b strings.Builder
+			for _, c := range s.Value.(ListValue) {
+				cc := c.(RuneValue)
+				b.WriteRune(rune(cc))
+			}
+			visitor.VisitString(b.String())
+		default:
+			panic(fmt.Sprintf("not implemented visiting logical scheme %v", lVal))
 		}
-		visitor.VisitString(b.String())
 		return
 	}
 	if t.Kind() != val.Kind() {
@@ -80,14 +85,14 @@ func VisitValue2(t Schema, visitor interface {
 	VisitAlias(Alias) AliasValue
 	VisitString() string
 }) SchemaValue {
-	if t == String {
+	if t == StringKind.Schema() {
 		s := visitor.VisitString()
 		runes := make([]SchemaValue, 0, len(s))
 		for _, c := range s {
 			runes = append(runes, RuneValue(c))
 		}
 		return AliasValue{
-			Name:  String.Name,
+			Name:  string(StringKind),
 			Value: ListValue(runes),
 		}
 	}
