@@ -160,6 +160,7 @@ type EnumInt struct {
 
 func (enumInt EnumInt) Visit(visitor TypeVisitor) { visitor.VisitEnumInt(enumInt) }
 
+// TODO: int64
 type EnumIntValue int
 
 func (EnumIntValue) isTypeValue() {}

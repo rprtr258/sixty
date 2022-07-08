@@ -65,3 +65,61 @@ func VisitValue(t Type, val TypeValue, visitor interface {
 		panic(fmt.Sprintf("%T(%[1]v) is not %T(%[2]v) value", val, t))
 	}
 }
+
+func VisitValue2(t Type, visitor interface {
+	VisitBit(Bit) BitValue
+	VisitInt(Int) IntValue
+	VisitUint(Uint) UintValue
+	VisitRune(Rune) RuneValue
+	VisitEnum(Enum) EnumValue
+	VisitEnumInt(EnumInt) EnumIntValue
+	VisitProduct(Product) ProductValue
+	VisitCoproduct(Coproduct) CoproductValue
+	VisitList(List) ListValue
+	VisitArray(Array) ArrayValue
+	VisitOptional(Optional) OptionalValue
+	VisitAlias(Alias) AliasValue
+	VisitString() string
+}) TypeValue {
+	if t == String {
+		s := visitor.VisitString()
+		runes := make([]TypeValue, 0, len(s))
+		for _, c := range s {
+			runes = append(runes, RuneValue(c))
+		}
+		return AliasValue{
+			Name:  String.Name,
+			Value: ListValue(runes),
+		}
+	}
+
+	switch tt := t.(type) {
+	case Bit:
+		return visitor.VisitBit(tt)
+	case Int:
+		return visitor.VisitInt(tt)
+	case Uint:
+		return visitor.VisitUint(tt)
+	case Rune:
+		return visitor.VisitRune(tt)
+	case Enum:
+		return visitor.VisitEnum(tt)
+	case EnumInt:
+		return visitor.VisitEnumInt(tt)
+	case Product:
+		return visitor.VisitProduct(tt)
+	case Coproduct:
+		return visitor.VisitCoproduct(tt)
+	case List:
+		return visitor.VisitList(tt)
+	case Array:
+		return visitor.VisitArray(tt)
+	case Optional:
+		return visitor.VisitOptional(tt)
+	case Alias:
+		return visitor.VisitAlias(tt)
+	default:
+		// TODO: wtf
+		panic("wtf")
+	}
+}

@@ -8,6 +8,7 @@ import (
 
 // TODO: bit encoder/decoder
 // TODO: byte decoder
+// TODO: compress list/array of bits
 type ByteEncoder struct {
 	builder bytes.Buffer
 }
