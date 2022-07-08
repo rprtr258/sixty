@@ -1,103 +1,8 @@
 package sixty
 
 import (
-	"fmt"
 	"math"
 )
-
-var String = Alias{
-	Schema: List{Schema: Rune{}},
-	Name:   "std:string",
-}
-
-type AccumVisitor[A any] interface {
-	VisitBit(Bit) A
-	VisitInt(Int) A
-	VisitUint(Uint) A
-	VisitRune(Rune) A
-	VisitEnum(Enum) A
-	VisitEnumInt(EnumInt) A
-	VisitProduct([]A) A
-	VisitCoproduct([]A) A
-	VisitList(A) A
-	VisitArray(A, uint) A
-	VisitOptional(A) A
-	VisitAlias(A, string) A
-}
-
-func DFSFactory[A any](visitor AccumVisitor[A]) func(Schema) A {
-	var res func(Schema) A
-	res = func(t Schema) A {
-		switch tt := t.(type) {
-		case Bit:
-			return visitor.VisitBit(tt)
-		case Int:
-			return visitor.VisitInt(tt)
-		case Uint:
-			return visitor.VisitUint(tt)
-		case Rune:
-			return visitor.VisitRune(tt)
-		case Enum:
-			return visitor.VisitEnum(tt)
-		case EnumInt:
-			return visitor.VisitEnumInt(tt)
-		case Product:
-			var product []A
-			for _, x := range tt {
-				product = append(product, res(x))
-			}
-			return visitor.VisitProduct(product)
-		case Coproduct:
-			var coproduct []A
-			for _, x := range tt {
-				coproduct = append(coproduct, res(x))
-			}
-			return visitor.VisitCoproduct(coproduct)
-		case List:
-			return visitor.VisitList(res(tt.Schema))
-		case Array:
-			return visitor.VisitArray(res(tt.Schema), tt.Count)
-		case Optional:
-			return visitor.VisitOptional(res(tt.Schema))
-		case Alias:
-			return visitor.VisitAlias(res(tt.Schema), tt.Name)
-		default:
-			panic(fmt.Sprintf("unknown type: %T", tt))
-		}
-	}
-	return res
-}
-
-type SchemaVisitor interface {
-	VisitBit(Bit)
-	VisitInt(Int)
-	VisitUint(Uint)
-	VisitRune(Rune)
-	VisitEnum(Enum)
-	VisitEnumInt(EnumInt)
-	VisitProduct(Product)
-	VisitCoproduct(Coproduct)
-	VisitList(List)
-	VisitArray(Array)
-	VisitOptional(Optional)
-	VisitAlias(Alias)
-}
-
-// TODO: make only one kind of visitor
-type EncoderVisitor interface {
-	VisitBit(Bit, BitValue)
-	VisitInt(Int, IntValue)
-	VisitUint(Uint, UintValue)
-	VisitRune(Rune, RuneValue)
-	VisitEnum(Enum, EnumValue)
-	VisitEnumInt(EnumInt, EnumIntValue)
-	VisitProduct(Product, ProductValue)
-	VisitCoproduct(Coproduct, CoproductValue)
-	VisitList(List, ListValue)
-	VisitArray(Array, ArrayValue)
-	VisitOptional(Optional, OptionalValue)
-	VisitAlias(Alias, AliasValue)
-}
 
 type Kind uint
 
@@ -116,9 +21,112 @@ const (
 	AliasKind
 )
 
+type PredefKind string
+
+const (
+	StringKind PredefKind = "std:string"
+	// Date
+	// Datetime
+	//    millis,micros,nanos
+)
+
+// type AccumVisitor[A any] interface {
+// 	VisitBit(Bit) A
+// 	VisitInt(Int) A
+// 	VisitUint(Uint) A
+// 	VisitRune(Rune) A
+// 	VisitEnum(Enum) A
+// 	VisitEnumInt(EnumInt) A
+// 	VisitProduct([]A) A
+// 	VisitCoproduct([]A) A
+// 	VisitList(A) A
+// 	VisitArray(A, uint) A
+// 	VisitOptional(A) A
+// 	VisitAlias(A, string) A
+// }
+
+// func DFSFactory[A any](visitor AccumVisitor[A]) func(Schema) A {
+// 	var res func(Schema) A
+// 	res = func(t Schema) A {
+// 		switch tt := t.(type) {
+// 		case Bit:
+// 			return visitor.VisitBit(tt)
+// 		case Int:
+// 			return visitor.VisitInt(tt)
+// 		case Uint:
+// 			return visitor.VisitUint(tt)
+// 		case Rune:
+// 			return visitor.VisitRune(tt)
+// 		case Enum:
+// 			return visitor.VisitEnum(tt)
+// 		case EnumInt:
+// 			return visitor.VisitEnumInt(tt)
+// 		case Product:
+// 			var product []A
+// 			for _, x := range tt {
+// 				product = append(product, res(x))
+// 			}
+// 			return visitor.VisitProduct(product)
+// 		case Coproduct:
+// 			var coproduct []A
+// 			for _, x := range tt {
+// 				coproduct = append(coproduct, res(x))
+// 			}
+// 			return visitor.VisitCoproduct(coproduct)
+// 		case List:
+// 			return visitor.VisitList(res(tt.Schema))
+// 		case Array:
+// 			return visitor.VisitArray(res(tt.Schema), tt.Count)
+// 		case Optional:
+// 			return visitor.VisitOptional(res(tt.Schema))
+// 		case Alias:
+// 			return visitor.VisitAlias(res(tt.Schema), tt.Name)
+// 		default:
+// 			panic(fmt.Sprintf("unknown type: %T", tt))
+// 		}
+// 	}
+// 	return res
+// }
+
+// type TypeVisitor interface {
+// 	VisitBit(Bit)
+// 	VisitInt(Int)
+// 	VisitUint(Uint)
+// 	VisitRune(Rune)
+// 	VisitEnum(Enum)
+// 	VisitEnumInt(EnumInt)
+// 	VisitProduct(Product)
+// 	VisitCoproduct(Coproduct)
+// 	VisitList(List)
+// 	VisitArray(Array)
+// 	VisitOptional(Optional)
+// 	VisitAlias(Alias)
+// }
+
+// // TODO: make only one kind of visitor
+// type EncoderVisitor interface {
+// 	VisitBit(Bit, BitValue)
+// 	VisitInt(Int, IntValue)
+// 	VisitUint(Uint, UintValue)
+// 	VisitRune(Rune, RuneValue)
+// 	VisitEnum(Enum, EnumValue)
+// 	VisitEnumInt(EnumInt, EnumIntValue)
+// 	VisitProduct(Product, ProductValue)
+// 	VisitCoproduct(Coproduct, CoproductValue)
+// 	VisitList(List, ListValue)
+// 	VisitArray(Array, ArrayValue)
+// 	VisitOptional(Optional, OptionalValue)
+// 	VisitAlias(Alias, AliasValue)
+// }
+
 type Schema interface {
-	Visit(SchemaVisitor)
 	Kind() Kind
+	// TODO: get value?
+}
+
+type PredefSchema interface {
+	PredefKind() PredefKind
+	Schema() Schema
 	// TODO: get value?
 }
 
@@ -130,8 +138,7 @@ type SchemaValue interface {
 
 type Bit struct{}
 
-func (bit Bit) Visit(visitor SchemaVisitor) { visitor.VisitBit(bit) }
-func (Bit) Kind() Kind                      { return BitKind }
+func (Bit) Kind() Kind { return BitKind }
 
 type BitValue bool
 
@@ -140,8 +147,7 @@ func (BitValue) Kind() Kind     { return BitKind }
 
 type Int struct{}
 
-func (intt Int) Visit(visitor SchemaVisitor) { visitor.VisitInt(intt) }
-func (Int) Kind() Kind                       { return IntKind }
+func (Int) Kind() Kind { return IntKind }
 
 type IntValue int
 
@@ -150,8 +156,7 @@ func (IntValue) Kind() Kind     { return IntKind }
 
 type Uint struct{}
 
-func (uintt Uint) Visit(visitor SchemaVisitor) { visitor.VisitUint(uintt) }
-func (Uint) Kind() Kind                        { return UintKind }
+func (Uint) Kind() Kind { return UintKind }
 
 type UintValue uint
 
@@ -160,8 +165,7 @@ func (UintValue) Kind() Kind     { return UintKind }
 
 type Rune struct{}
 
-func (runee Rune) Visit(visitor SchemaVisitor) { visitor.VisitRune(runee) }
-func (Rune) Kind() Kind                        { return RuneKind }
+func (Rune) Kind() Kind { return RuneKind }
 
 type RuneValue rune
 
@@ -172,8 +176,7 @@ type Enum struct {
 	Values []string
 }
 
-func (enum Enum) Visit(visitor SchemaVisitor) { visitor.VisitEnum(enum) }
-func (Enum) Kind() Kind                       { return EnumKind }
+func (Enum) Kind() Kind { return EnumKind }
 
 type EnumValue uint
 
@@ -185,8 +188,7 @@ type EnumInt struct {
 	Max int
 }
 
-func (enumInt EnumInt) Visit(visitor SchemaVisitor) { visitor.VisitEnumInt(enumInt) }
-func (EnumInt) Kind() Kind                          { return EnumIntKind }
+func (EnumInt) Kind() Kind { return EnumIntKind }
 
 // TODO: int64
 type EnumIntValue int
@@ -196,8 +198,7 @@ func (EnumIntValue) Kind() Kind     { return EnumIntKind }
 
 type Product []Schema
 
-func (product Product) Visit(visitor SchemaVisitor) { visitor.VisitProduct(product) }
-func (Product) Kind() Kind                          { return ProductKind }
+func (Product) Kind() Kind { return ProductKind }
 
 type ProductValue []SchemaValue
 
@@ -206,8 +207,7 @@ func (ProductValue) Kind() Kind     { return ProductKind }
 
 type Coproduct []Schema
 
-func (coproduct Coproduct) Visit(visitor SchemaVisitor) { visitor.VisitCoproduct(coproduct) }
-func (Coproduct) Kind() Kind                            { return CoproductKind }
+func (Coproduct) Kind() Kind { return CoproductKind }
 
 type CoproductValue struct {
 	SchemaValue
@@ -221,8 +221,7 @@ type List struct {
 	Schema
 }
 
-func (list List) Visit(visitor SchemaVisitor) { visitor.VisitList(list) }
-func (List) Kind() Kind                       { return ListKind }
+func (List) Kind() Kind { return ListKind }
 
 type ListValue []SchemaValue
 
@@ -234,8 +233,7 @@ type Array struct {
 	Count uint
 }
 
-func (array Array) Visit(visitor SchemaVisitor) { visitor.VisitArray(array) }
-func (Array) Kind() Kind                        { return ArrayKind }
+func (Array) Kind() Kind { return ArrayKind }
 
 type ArrayValue []SchemaValue
 
@@ -246,8 +244,7 @@ type Optional struct {
 	Schema
 }
 
-func (optional Optional) Visit(visitor SchemaVisitor) { visitor.VisitOptional(optional) }
-func (Optional) Kind() Kind                           { return OptionalKind }
+func (Optional) Kind() Kind { return OptionalKind }
 
 type OptionalValue struct {
 	SchemaValue
@@ -263,8 +260,7 @@ type Alias struct {
 	Name string
 }
 
-func (alias Alias) Visit(visitor SchemaVisitor) { visitor.VisitAlias(alias) }
-func (Alias) Kind() Kind                        { return AliasKind }
+func (Alias) Kind() Kind { return AliasKind }
 
 type AliasValue struct {
 	Name  string
@@ -274,8 +270,19 @@ type AliasValue struct {
 func (AliasValue) isSchemaValue() {}
 func (AliasValue) Kind() Kind     { return AliasKind }
 
-// type SchemaWithMetadata struct {
-// 	Schema
+type String struct{}
+
+func (s String) Kind() Kind           { return s.Schema().Kind() }
+func (String) PredefKind() PredefKind { return StringKind }
+func (String) Schema() Schema         { return List{Schema: Rune{}} }
+
+type StringValue string
+
+func (StringValue) isSchemaValue() {}
+func (StringValue) Kind() Kind     { return ListKind }
+
+// type TypeWithMetadata struct {
+// 	Type
 // 	KVMeta    map[string]string
 // 	FlagsMeta map[string]struct{}
 // }
@@ -285,6 +292,7 @@ func (AliasValue) Kind() Kind     { return AliasKind }
 // TODO: stupid printer
 // TODO: algebraic printer
 
+// TODO: move out
 // TODO: own Log2 on int and uint
 func Log2(x int) uint {
 	return uint(math.Ceil(math.Log2(float64(x))))

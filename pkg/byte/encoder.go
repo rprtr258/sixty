@@ -33,60 +33,59 @@ func (v *ByteEncoder) writeInt(x int) {
 	}
 }
 
-func (v *ByteEncoder) VisitString(s string) {
-	v.writeUint(uint(len(s)))
-	v.Buffer.WriteString(s)
+func assertSchemas[S sixty.Schema, V sixty.SchemaValue](t sixty.Schema, v sixty.SchemaValue) (tt S, vv V, ok bool) {
+	tt, okSchema := t.(S)
+	vv, okValue := v.(V)
+	ok = okSchema && okValue
+	return
 }
-func (v *ByteEncoder) VisitBit(_ sixty.Bit, bit sixty.BitValue) {
-	if bit {
-		v.Buffer.WriteByte(1)
+
+func (e *ByteEncoder) Write(t sixty.Schema, v sixty.SchemaValue) {
+	if _, vv, ok := assertSchemas[sixty.String, sixty.StringValue](t, v); ok {
+		e.writeUint(uint(len(vv)))
+		e.Buffer.WriteString(string(vv))
+	} else if _, vv, ok := assertSchemas[sixty.Bit, sixty.BitValue](t, v); ok {
+		if vv {
+			e.Buffer.WriteByte(1)
+		} else {
+			e.Buffer.WriteByte(0)
+		}
+	} else if _, vv, ok := assertSchemas[sixty.Int, sixty.IntValue](t, v); ok {
+		e.writeInt(int(vv))
+	} else if _, vv, ok := assertSchemas[sixty.Uint, sixty.UintValue](t, v); ok {
+		e.writeUint(uint(vv))
+	} else if _, vv, ok := assertSchemas[sixty.Rune, sixty.RuneValue](t, v); ok {
+		e.Buffer.WriteRune(rune(vv))
+	} else if _, vv, ok := assertSchemas[sixty.Enum, sixty.EnumValue](t, v); ok {
+		e.writeUint(uint(vv))
+	} else if tt, vv, ok := assertSchemas[sixty.EnumInt, sixty.EnumIntValue](t, v); ok {
+		e.writeUint(uint(int(vv) - tt.Min))
+	} else if tt, vv, ok := assertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
+		for i, x := range vv {
+			e.Write(tt[i], x)
+		}
+	} else if tt, vv, ok := assertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
+		e.writeUint(vv.Variant)
+		e.Write(tt[vv.Variant], vv.SchemaValue)
+	} else if tt, vv, ok := assertSchemas[sixty.List, sixty.ListValue](t, v); ok {
+		e.writeUint(uint(len(vv)))
+		for _, x := range vv {
+			e.Write(tt.Schema, x)
+		}
+	} else if tt, vv, ok := assertSchemas[sixty.Array, sixty.ArrayValue](t, v); ok {
+		for _, x := range vv {
+			e.Write(tt.Schema, x)
+		}
+	} else if tt, vv, ok := assertSchemas[sixty.Optional, sixty.OptionalValue](t, v); ok {
+		if !vv.IsValid {
+			e.writeUint(0)
+		} else {
+			e.writeUint(1)
+			e.Write(tt.Schema, vv.SchemaValue)
+		}
+	} else if tt, vv, ok := assertSchemas[sixty.Alias, sixty.AliasValue](t, v); ok {
+		e.Write(tt.Schema, vv.Value)
 	} else {
-		v.Buffer.WriteByte(0)
+		panic("something unimplemented")
 	}
-}
-func (v *ByteEncoder) VisitInt(_ sixty.Int, n sixty.IntValue) {
-	v.writeInt(int(n))
-}
-func (v *ByteEncoder) VisitUint(_ sixty.Uint, n sixty.UintValue) {
-	v.writeUint(uint(n))
-}
-func (v *ByteEncoder) VisitRune(_ sixty.Rune, r sixty.RuneValue) {
-	v.Buffer.WriteRune(rune(r))
-}
-func (v *ByteEncoder) VisitEnum(enum sixty.Enum, n sixty.EnumValue) {
-	v.writeUint(uint(n))
-}
-func (v *ByteEncoder) VisitEnumInt(enumInt sixty.EnumInt, n sixty.EnumIntValue) {
-	v.writeUint(uint(int(n) - enumInt.Min))
-}
-func (v *ByteEncoder) VisitProduct(product sixty.Product, p sixty.ProductValue) {
-	for i, x := range p {
-		sixty.VisitValue(product[i], x, v)
-	}
-}
-func (v *ByteEncoder) VisitCoproduct(coproduct sixty.Coproduct, c sixty.CoproductValue) {
-	v.writeUint(c.Variant)
-	sixty.VisitValue(coproduct[c.Variant], c.SchemaValue, v)
-}
-func (v *ByteEncoder) VisitList(list sixty.List, l sixty.ListValue) {
-	v.writeUint(uint(len(l)))
-	for _, x := range l {
-		sixty.VisitValue(list.Schema, x, v)
-	}
-}
-func (v *ByteEncoder) VisitArray(array sixty.Array, a sixty.ArrayValue) {
-	for _, x := range a {
-		sixty.VisitValue(array.Schema, x, v)
-	}
-}
-func (v *ByteEncoder) VisitOptional(optional sixty.Optional, o sixty.OptionalValue) {
-	if !o.IsValid {
-		v.writeUint(0)
-	} else {
-		v.writeUint(1)
-		sixty.VisitValue(optional.Schema, o.SchemaValue, v)
-	}
-}
-func (v *ByteEncoder) VisitAlias(alias sixty.Alias, a sixty.AliasValue) {
-	sixty.VisitValue(alias.Schema, a.Value, v)
 }

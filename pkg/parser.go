@@ -81,8 +81,8 @@ func (r *SchemaReader) ParseSchema() Schema {
 		return Coproduct(r.ParseCommaSeparatedSchemas("}"))
 	// TODO: enum
 	// TODO: alias
-	case "std:string":
-		return String
+	case string(StringKind):
+		return String{}
 	default:
 		panic(token)
 	}
