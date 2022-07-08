@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	sixty "github.com/rprtr258/sixty/pkg"
+	bytesenc "github.com/rprtr258/sixty/pkg/byte"
 )
 
 var (
@@ -50,7 +51,7 @@ func TestBttvDBJsonEncoder(t *testing.T) {
 }
 
 func TestBttvDBByteEncoder(t *testing.T) {
-	je := &sixty.ByteEncoder{}
+	je := &bytesenc.ByteEncoder{}
 	sixty.VisitValue(bttvEmotesDB, bttvEmotesDBData, je)
 	assert.Equal(t, []byte{
 		0x2,
