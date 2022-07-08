@@ -104,7 +104,7 @@ func (visitor *prettyPrinter) VisitEnum(enum Enum) {
 }
 
 func (visitor *prettyPrinter) VisitEnumInt(enumInt EnumInt) {
-	visitor.writeString(fmt.Sprintf("[%d..%d]", enumInt.Min, enumInt.Max))
+	visitor.writeString(fmt.Sprintf("(%d..%d)", enumInt.Min, enumInt.Max))
 }
 
 func (visitor *prettyPrinter) VisitAlias(alias Alias) {

@@ -20,7 +20,7 @@ func stoS(s string) sixty.AliasValue {
 	}
 }
 
-var TokenRegex = regexp.MustCompile(`(\[|\]|\(|\)|\{|\}|,|\d+|std:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)
+var TokenRegex = regexp.MustCompile(`(\[|\]|\(|\)|\{|\}|,|\?|\d+|std:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)
 
 type SchemaReader struct {
 	tokens [][]byte
@@ -59,6 +59,8 @@ func (r *SchemaReader) ParseType() sixty.Type {
 		return sixty.Uint{}
 	case "rune":
 		return sixty.Rune{}
+	case "?":
+		return sixty.Optional{Type: r.ParseType()}
 	case "[":
 		nextToken := r.Next()
 		if nextToken == "]" {
@@ -143,7 +145,8 @@ func ExampleBttvEmotesDB() {
 }
 
 func main() {
-	schema, err := ParseSchema(`[](std:string,[]std:string)`)
+	// schema, err := ParseSchema(`[](std:string,[]std:string)`)
+	schema, err := ParseSchema(`[](0..255)`)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
