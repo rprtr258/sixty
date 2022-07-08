@@ -25,8 +25,7 @@ func VisitValue(t Type, val TypeValue, visitor interface {
 	VisitAlias(Alias, AliasValue)
 	VisitString(string)
 }) {
-	switch {
-	case t == String:
+	if t == String {
 		// TODO: check val is string
 		s := val.(AliasValue)
 		var b strings.Builder
@@ -35,33 +34,39 @@ func VisitValue(t Type, val TypeValue, visitor interface {
 			b.WriteRune(rune(cc))
 		}
 		visitor.VisitString(b.String())
-	case checkTypeValue(t, val, BitKind):
-		visitor.VisitBit(t.(Bit), val.(BitValue))
-	case checkTypeValue(t, val, IntKind):
-		visitor.VisitInt(t.(Int), val.(IntValue))
-	case checkTypeValue(t, val, UintKind):
-		visitor.VisitUint(t.(Uint), val.(UintValue))
-	case checkTypeValue(t, val, RuneKind):
-		visitor.VisitRune(t.(Rune), val.(RuneValue))
-	case checkTypeValue(t, val, EnumKind):
-		visitor.VisitEnum(t.(Enum), val.(EnumValue))
-	case checkTypeValue(t, val, EnumIntKind):
-		visitor.VisitEnumInt(t.(EnumInt), val.(EnumIntValue))
-	case checkTypeValue(t, val, ProductKind):
-		visitor.VisitProduct(t.(Product), val.(ProductValue))
-	case checkTypeValue(t, val, CoproductKind):
-		visitor.VisitCoproduct(t.(Coproduct), val.(CoproductValue))
-	case checkTypeValue(t, val, ListKind):
-		visitor.VisitList(t.(List), val.(ListValue))
-	case checkTypeValue(t, val, ArrayKind):
-		visitor.VisitArray(t.(Array), val.(ArrayValue))
-	case checkTypeValue(t, val, OptionalKind):
-		visitor.VisitOptional(t.(Optional), val.(OptionalValue))
-	case checkTypeValue(t, val, AliasKind):
-		visitor.VisitAlias(t.(Alias), val.(AliasValue))
-	default:
+		return
+	}
+	if t.Kind() != val.Kind() {
 		// TODO: error: wrong schema
 		panic(fmt.Sprintf("%T(%[1]v) is not %T(%[2]v) value", val, t))
+	}
+	switch t.Kind() {
+	case BitKind:
+		visitor.VisitBit(t.(Bit), val.(BitValue))
+	case IntKind:
+		visitor.VisitInt(t.(Int), val.(IntValue))
+	case UintKind:
+		visitor.VisitUint(t.(Uint), val.(UintValue))
+	case RuneKind:
+		visitor.VisitRune(t.(Rune), val.(RuneValue))
+	case EnumKind:
+		visitor.VisitEnum(t.(Enum), val.(EnumValue))
+	case EnumIntKind:
+		visitor.VisitEnumInt(t.(EnumInt), val.(EnumIntValue))
+	case ProductKind:
+		visitor.VisitProduct(t.(Product), val.(ProductValue))
+	case CoproductKind:
+		visitor.VisitCoproduct(t.(Coproduct), val.(CoproductValue))
+	case ListKind:
+		visitor.VisitList(t.(List), val.(ListValue))
+	case ArrayKind:
+		visitor.VisitArray(t.(Array), val.(ArrayValue))
+	case OptionalKind:
+		visitor.VisitOptional(t.(Optional), val.(OptionalValue))
+	case AliasKind:
+		visitor.VisitAlias(t.(Alias), val.(AliasValue))
+	default:
+		panic(fmt.Sprintf("unimplemented kind %T", t))
 	}
 }
 
