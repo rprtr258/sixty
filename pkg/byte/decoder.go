@@ -10,6 +10,7 @@ import (
 // TODO: byte decoder
 type ByteDecoder struct {
 	// TODO: make private
+	// TODO: change to struct based on io.Writer
 	Buffer interface {
 		ReadByte() (byte, error)
 		ReadRune() (rune, int, error)
