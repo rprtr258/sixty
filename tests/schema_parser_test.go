@@ -13,7 +13,8 @@ var bttvEmotesDB = sixty.List{Type: sixty.Product{
 	sixty.List{Type: sixty.String}, // TODO: name as "ids"
 }}
 
-func stoS(s string) sixty.AliasValue {
+// TODO: use to encode string and other primitive types
+func stringToString(s string) sixty.TypeValue {
 	var l sixty.ListValue
 	for _, c := range s {
 		l = append(l, sixty.RuneValue(c))
@@ -24,27 +25,27 @@ func stoS(s string) sixty.AliasValue {
 	}
 }
 
-func TestBttvDBSize(t *testing.T) {
-	assert.Equal(t, sixty.Inf, sixty.SizeVisitor(bttvEmotesDB))
-}
-
 func TestBttvDBJsonEncoder(t *testing.T) {
 	je := &sixty.JsonEncoder{}
 	data := sixty.ListValue{sixty.ProductValue{
-		stoS("Kappa"),
+		stringToString("Kappa"),
 		sixty.ListValue{
-			stoS("KappaOwner1"),
-			stoS("KappaOwner2"),
+			stringToString("KappaOwner1"),
+			stringToString("KappaOwner2"),
 		},
 	}, sixty.ProductValue{
-		stoS("PogChamp"),
+		stringToString("PogChamp"),
 		sixty.ListValue{
-			stoS("PogChampOwner1"),
-			stoS("PogChampOwner2"),
+			stringToString("PogChampOwner1"),
+			stringToString("PogChampOwner2"),
 		},
 	}}
 	sixty.VisitValue(bttvEmotesDB, data, je)
 	assert.Equal(t, `[{"0":"Kappa","1":["KappaOwner1","KappaOwner2"]},{"0":"PogChamp","1":["PogChampOwner1","PogChampOwner2"]}]`, je.String())
+}
+
+func TestBttvDBSize(t *testing.T) {
+	assert.Equal(t, sixty.Inf, sixty.SizeVisitor(bttvEmotesDB))
 }
 
 func TestBttvDB(t *testing.T) {
