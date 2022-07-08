@@ -47,32 +47,26 @@ func (visitor *prettyPrinter) VisitProduct(product Product) {
 	visitor.writeString("(\n")
 	visitor.ident++
 
-	n := len(product)
-	for i, field := range product {
+	for _, field := range product {
 		field.Visit(visitor)
-		if i < n-1 {
-			visitor.builder.WriteString(",\n")
-		}
+		visitor.builder.WriteString(",\n")
 	}
 
 	visitor.ident--
-	visitor.writeString("\n)")
+	visitor.writeString(")")
 }
 
 func (visitor *prettyPrinter) VisitCoproduct(coproduct Coproduct) {
-	visitor.writeString("[\n")
+	visitor.writeString("{\n")
 	visitor.ident++
 
-	n := len(coproduct)
-	for i, field := range coproduct {
+	for _, field := range coproduct {
 		field.Visit(visitor)
-		if i < n-1 {
-			visitor.builder.WriteString(",")
-		}
+		visitor.builder.WriteString(",\n")
 	}
 
 	visitor.ident--
-	visitor.writeString("\n]")
+	visitor.writeString("}")
 }
 
 func (visitor *prettyPrinter) VisitList(list List) {
@@ -124,4 +118,10 @@ func (visitor *prettyPrinter) String() string {
 	})
 	s3 := stream.CollectToSlice(s2)
 	return strings.Join(s3, "") + visitor.builder.String()
+}
+
+func PrettyPrintSchema(t Type) string {
+	tsv := NewPrettyPrinter()
+	t.Visit(&tsv)
+	return tsv.String()
 }
