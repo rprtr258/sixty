@@ -16,11 +16,11 @@ func (x *Size) Add(y Size) *Size {
 	return x
 }
 
-func (x Size) Multiply(n int) Size {
+func (x Size) Multiply(n uint) Size {
 	if x == Inf {
 		return Inf
 	}
-	return Size(int(x) * n)
+	return Size(uint(x) * n)
 }
 
 func (x Size) String() string {
@@ -30,36 +30,47 @@ func (x Size) String() string {
 	return strconv.Itoa(int(x))
 }
 
-// type sizeVisitor struct{}
-
-// // var SizeVisitor = DFSFactory((AccumVisitor[Size])(sizeVisitor{}))
-
-// func (sv sizeVisitor) VisitBit(Bit) Size   { return 1 }
-// func (sv sizeVisitor) VisitInt(Int) Size   { return Inf }
-// func (sv sizeVisitor) VisitUint(Uint) Size { return Inf }
-// func (sv sizeVisitor) VisitRune(Rune) Size { return Inf }
-// func (sv sizeVisitor) VisitEnum(enum Enum) Size {
-// 	return Size(Log2(len(enum.Values)))
-// }
-// func (sv sizeVisitor) VisitEnumInt(enumInt EnumInt) Size {
-// 	return Size(Log2((enumInt.Max - enumInt.Min)))
-// }
-// func (sv sizeVisitor) VisitProduct(product []Size) (s Size) {
-// 	for _, x := range product {
-// 		s.Add(x)
-// 	}
-// 	return
-// }
-// func (sv sizeVisitor) VisitCoproduct(coproduct []Size) (s Size) {
-// 	for _, x := range coproduct {
-// 		if s < x {
-// 			s = x
-// 		}
-// 	}
-// 	s.Add(Size(Log2(len(coproduct))))
-// 	return
-// }
-// func (sv sizeVisitor) VisitList(Size) Size                    { return Inf }
-// func (sv sizeVisitor) VisitArray(array Size, count uint) Size { return array.Multiply(int(count)) }
-// func (sv sizeVisitor) VisitOptional(optional Size) Size       { return optional + 1 }
-// func (sv sizeVisitor) VisitAlias(alias Size, _ string) Size   { return alias }
+func SchemaSize(t Schema) Size {
+	switch tt := t.(type) {
+	case String:
+		return Inf
+	case Bit:
+		return 1
+	case Int:
+		return Inf
+	case Uint:
+		return Inf
+	case Rune:
+		return Inf
+	case Enum:
+		return Size(Log2(len(tt.Values)))
+	case EnumInt:
+		return Size(Log2((tt.Max - tt.Min)))
+	case Product:
+		sum := Size(0)
+		for _, x := range tt {
+			sum.Add(SchemaSize(x))
+		}
+		return sum
+	case Coproduct:
+		max := Size(0)
+		for _, x := range tt {
+			xSize := SchemaSize(x)
+			if max < xSize {
+				max = xSize
+			}
+		}
+		max.Add(Size(Log2(len(tt))))
+		return max
+	case List:
+		return Inf
+	case Array:
+		return SchemaSize(tt.Schema).Multiply(tt.Count)
+	case Optional:
+		return 1 + SchemaSize(tt.Schema)
+	case Alias:
+		return SchemaSize(tt.Schema)
+	default:
+		panic("something unimplemented")
+	}
+}

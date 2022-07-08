@@ -70,9 +70,9 @@ func TestBttvDBByteDecoder(t *testing.T) {
 	assert.Equal(t, bttvEmotesDBData, got)
 }
 
-// func TestBttvDBSize(t *testing.T) {
-// 	assert.Equal(t, sixty.Inf, sixty.SizeVisitor(bttvEmotesDB))
-// }
+func TestBttvDBSize(t *testing.T) {
+	assert.Equal(t, sixty.Inf, sixty.SchemaSize(bttvEmotesDBSchema))
+}
 
 func TestBttvDB(t *testing.T) {
 	schema, err := sixty.ParseSchema(`[](std:string,[]std:string)`)
