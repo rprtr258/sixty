@@ -38,7 +38,7 @@ func (j *JsonEncoder) VisitProduct(product Product, p ProductValue) {
 	j.builder.WriteString("{")
 	for i, x := range p {
 		// TODO: move out std:types as a separate case
-		if checkTypeValue[Alias, AliasValue](product[i], x) && product[i].(Alias).Name[:4] != "std:" {
+		if checkTypeValue(product[i], x, AliasKind) && product[i].(Alias).Name[:4] != "std:" {
 			j.builder.WriteString(fmt.Sprintf(`"%s":`, (product[i]).(Alias).Name))
 			VisitValue(product[i].(Alias).Type, x.(AliasValue).Value, j)
 		} else {

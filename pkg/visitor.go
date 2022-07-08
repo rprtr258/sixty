@@ -5,10 +5,9 @@ import (
 	"strings"
 )
 
-func checkTypeValue[T Type, V TypeValue](t Type, val TypeValue) bool {
-	_, okType := t.(T)
-	_, okValue := val.(V)
-	return okType && okValue
+// TODO: change to kinds
+func checkTypeValue(t Type, val TypeValue, kind Kind) bool {
+	return t.Kind() == kind && val.Kind() == kind
 }
 
 func VisitValue(t Type, val TypeValue, visitor interface {
@@ -36,29 +35,29 @@ func VisitValue(t Type, val TypeValue, visitor interface {
 			b.WriteRune(rune(cc))
 		}
 		visitor.VisitString(b.String())
-	case checkTypeValue[Bit, BitValue](t, val):
+	case checkTypeValue(t, val, BitKind):
 		visitor.VisitBit(t.(Bit), val.(BitValue))
-	case checkTypeValue[Int, IntValue](t, val):
+	case checkTypeValue(t, val, IntKind):
 		visitor.VisitInt(t.(Int), val.(IntValue))
-	case checkTypeValue[Uint, UintValue](t, val):
+	case checkTypeValue(t, val, UintKind):
 		visitor.VisitUint(t.(Uint), val.(UintValue))
-	case checkTypeValue[Rune, RuneValue](t, val):
+	case checkTypeValue(t, val, RuneKind):
 		visitor.VisitRune(t.(Rune), val.(RuneValue))
-	case checkTypeValue[Enum, EnumValue](t, val):
+	case checkTypeValue(t, val, EnumKind):
 		visitor.VisitEnum(t.(Enum), val.(EnumValue))
-	case checkTypeValue[EnumInt, EnumIntValue](t, val):
+	case checkTypeValue(t, val, EnumIntKind):
 		visitor.VisitEnumInt(t.(EnumInt), val.(EnumIntValue))
-	case checkTypeValue[Product, ProductValue](t, val):
+	case checkTypeValue(t, val, ProductKind):
 		visitor.VisitProduct(t.(Product), val.(ProductValue))
-	case checkTypeValue[Coproduct, CoproductValue](t, val):
+	case checkTypeValue(t, val, CoproductKind):
 		visitor.VisitCoproduct(t.(Coproduct), val.(CoproductValue))
-	case checkTypeValue[List, ListValue](t, val):
+	case checkTypeValue(t, val, ListKind):
 		visitor.VisitList(t.(List), val.(ListValue))
-	case checkTypeValue[Array, ArrayValue](t, val):
+	case checkTypeValue(t, val, ArrayKind):
 		visitor.VisitArray(t.(Array), val.(ArrayValue))
-	case checkTypeValue[Optional, OptionalValue](t, val):
+	case checkTypeValue(t, val, OptionalKind):
 		visitor.VisitOptional(t.(Optional), val.(OptionalValue))
-	case checkTypeValue[Alias, AliasValue](t, val):
+	case checkTypeValue(t, val, AliasKind):
 		visitor.VisitAlias(t.(Alias), val.(AliasValue))
 	default:
 		// TODO: error: wrong schema

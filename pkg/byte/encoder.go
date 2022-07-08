@@ -50,10 +50,10 @@ func (j *ByteEncoder) VisitRune(_ sixty.Rune, r sixty.RuneValue) {
 	j.builder.WriteRune(rune(r))
 }
 func (j *ByteEncoder) VisitEnum(enum sixty.Enum, n sixty.EnumValue) {
-	j.writeUint(sixty.Log2(int(n)))
+	j.writeUint(uint(n))
 }
 func (j *ByteEncoder) VisitEnumInt(enumInt sixty.EnumInt, n sixty.EnumIntValue) {
-	j.writeUint(sixty.Log2(int(n) - enumInt.Min))
+	j.writeUint(uint(int(n) - enumInt.Min))
 }
 func (j *ByteEncoder) VisitProduct(product sixty.Product, p sixty.ProductValue) {
 	for i, x := range p {
@@ -61,7 +61,7 @@ func (j *ByteEncoder) VisitProduct(product sixty.Product, p sixty.ProductValue) 
 	}
 }
 func (j *ByteEncoder) VisitCoproduct(coproduct sixty.Coproduct, c sixty.CoproductValue) {
-	j.writeUint(sixty.Log2(int(c.Variant)))
+	j.writeUint(c.Variant)
 	sixty.VisitValue(coproduct[c.Variant], c.TypeValue, j)
 }
 func (j *ByteEncoder) VisitList(list sixty.List, l sixty.ListValue) {
