@@ -63,8 +63,8 @@ func TestBttvDBJsonEncoder(t *testing.T) {
 }
 
 func TestBttvDBByteEncoder(t *testing.T) {
-	je := &bytesenc.ByteEncoder{}
-	sixty.VisitValue(bttvEmotesDB, bttvEmotesDBData, je)
+	je := bytes.Buffer{}
+	sixty.VisitValue(bttvEmotesDB, bttvEmotesDBData, &bytesenc.ByteEncoder{Builder: &je})
 	assert.Equal(t, bttvEmotesDBBytes, je.Bytes())
 }
 

@@ -10,14 +10,15 @@ import (
 // TODO: byte decoder
 // TODO: compress list/array of bits
 type ByteEncoder struct {
-	builder bytes.Buffer
+	// TODO: make unexported
+	Builder *bytes.Buffer
 }
 
 func (j *ByteEncoder) writeUint(x uint) {
 	// TODO: implement
 	switch {
 	case x < 128:
-		j.builder.WriteByte(byte(x))
+		j.Builder.WriteByte(byte(x))
 	}
 }
 func (j *ByteEncoder) writeInt(x int) {
@@ -31,13 +32,13 @@ func (j *ByteEncoder) writeInt(x int) {
 
 func (j *ByteEncoder) VisitString(s string) {
 	j.writeUint(uint(len(s)))
-	j.builder.WriteString(s)
+	j.Builder.WriteString(s)
 }
 func (j *ByteEncoder) VisitBit(_ sixty.Bit, bit sixty.BitValue) {
 	if bit {
-		j.builder.WriteByte(1)
+		j.Builder.WriteByte(1)
 	} else {
-		j.builder.WriteByte(0)
+		j.Builder.WriteByte(0)
 	}
 }
 func (j *ByteEncoder) VisitInt(_ sixty.Int, n sixty.IntValue) {
@@ -47,7 +48,7 @@ func (j *ByteEncoder) VisitUint(_ sixty.Uint, n sixty.UintValue) {
 	j.writeUint(uint(n))
 }
 func (j *ByteEncoder) VisitRune(_ sixty.Rune, r sixty.RuneValue) {
-	j.builder.WriteRune(rune(r))
+	j.Builder.WriteRune(rune(r))
 }
 func (j *ByteEncoder) VisitEnum(enum sixty.Enum, n sixty.EnumValue) {
 	j.writeUint(uint(n))
@@ -85,8 +86,4 @@ func (j *ByteEncoder) VisitOptional(optional sixty.Optional, o sixty.OptionalVal
 }
 func (j *ByteEncoder) VisitAlias(alias sixty.Alias, a sixty.AliasValue) {
 	sixty.VisitValue(alias.Type, a.Value, j)
-}
-
-func (j *ByteEncoder) Bytes() []byte {
-	return j.builder.Bytes()
 }
