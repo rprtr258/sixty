@@ -24,9 +24,9 @@ func (r *SchemaReader) Next() (res string) {
 	return
 }
 
-func (r *SchemaReader) ParseCommaSeparatedTypes(endToken string) (res []Type) {
+func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []Schema) {
 	for {
-		res = append(res, r.ParseType())
+		res = append(res, r.ParseSchema())
 		nextToken := r.Next()
 		if nextToken == endToken {
 			return
@@ -34,7 +34,7 @@ func (r *SchemaReader) ParseCommaSeparatedTypes(endToken string) (res []Type) {
 	}
 }
 
-func (r *SchemaReader) ParseType() Type {
+func (r *SchemaReader) ParseSchema() Schema {
 	token := r.Next()
 	switch token {
 	case "bit":
@@ -46,11 +46,11 @@ func (r *SchemaReader) ParseType() Type {
 	case "rune":
 		return Rune{}
 	case "?":
-		return Optional{Type: r.ParseType()}
+		return Optional{Schema: r.ParseSchema()}
 	case "[":
 		nextToken := r.Next()
 		if nextToken == "]" {
-			return List{Type: r.ParseType()}
+			return List{Schema: r.ParseSchema()}
 		} else {
 			arrayLength, err := strconv.Atoi(nextToken)
 			if err != nil {
@@ -58,8 +58,8 @@ func (r *SchemaReader) ParseType() Type {
 			}
 			r.Next() // TODO: assert "]"
 			return Array{
-				Type:  r.ParseType(),
-				Count: uint(arrayLength),
+				Schema: r.ParseSchema(),
+				Count:  uint(arrayLength),
 			}
 		}
 	case "(":
@@ -76,9 +76,9 @@ func (r *SchemaReader) ParseType() Type {
 				Max: max,
 			}
 		}
-		return Product(r.ParseCommaSeparatedTypes(")"))
+		return Product(r.ParseCommaSeparatedSchemas(")"))
 	case "{":
-		return Coproduct(r.ParseCommaSeparatedTypes("}"))
+		return Coproduct(r.ParseCommaSeparatedSchemas("}"))
 	// TODO: enum
 	// TODO: alias
 	case "std:string":
@@ -95,12 +95,12 @@ func Tokenize(s string) SchemaReader {
 	}
 }
 
-func ParseSchema(s string) (Type, error) {
+func ParseSchema(s string) (Schema, error) {
 	reader := Tokenize(s)
-	return reader.ParseType(), nil
+	return reader.ParseSchema(), nil
 }
 
-func MustParseSchema(s string) Type {
+func MustParseSchema(s string) Schema {
 	res, err := ParseSchema(s)
 	if err != nil {
 		panic(err)

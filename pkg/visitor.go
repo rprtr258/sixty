@@ -5,12 +5,7 @@ import (
 	"strings"
 )
 
-// TODO: change to kinds
-func checkTypeValue(t Type, val TypeValue, kind Kind) bool {
-	return t.Kind() == kind && val.Kind() == kind
-}
-
-func VisitValue(t Type, val TypeValue, visitor interface {
+func VisitValue(t Schema, val SchemaValue, visitor interface {
 	VisitBit(Bit, BitValue)
 	VisitInt(Int, IntValue)
 	VisitUint(Uint, UintValue)
@@ -70,7 +65,7 @@ func VisitValue(t Type, val TypeValue, visitor interface {
 	}
 }
 
-func VisitValue2(t Type, visitor interface {
+func VisitValue2(t Schema, visitor interface {
 	VisitBit(Bit) BitValue
 	VisitInt(Int) IntValue
 	VisitUint(Uint) UintValue
@@ -84,10 +79,10 @@ func VisitValue2(t Type, visitor interface {
 	VisitOptional(Optional) OptionalValue
 	VisitAlias(Alias) AliasValue
 	VisitString() string
-}) TypeValue {
+}) SchemaValue {
 	if t == String {
 		s := visitor.VisitString()
-		runes := make([]TypeValue, 0, len(s))
+		runes := make([]SchemaValue, 0, len(s))
 		for _, c := range s {
 			runes = append(runes, RuneValue(c))
 		}

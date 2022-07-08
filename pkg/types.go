@@ -6,8 +6,8 @@ import (
 )
 
 var String = Alias{
-	Type: List{Type: Rune{}},
-	Name: "std:string",
+	Schema: List{Schema: Rune{}},
+	Name:   "std:string",
 }
 
 type AccumVisitor[A any] interface {
@@ -25,9 +25,9 @@ type AccumVisitor[A any] interface {
 	VisitAlias(A, string) A
 }
 
-func DFSFactory[A any](visitor AccumVisitor[A]) func(Type) A {
-	var res func(Type) A
-	res = func(t Type) A {
+func DFSFactory[A any](visitor AccumVisitor[A]) func(Schema) A {
+	var res func(Schema) A
+	res = func(t Schema) A {
 		switch tt := t.(type) {
 		case Bit:
 			return visitor.VisitBit(tt)
@@ -54,13 +54,13 @@ func DFSFactory[A any](visitor AccumVisitor[A]) func(Type) A {
 			}
 			return visitor.VisitCoproduct(coproduct)
 		case List:
-			return visitor.VisitList(res(tt.Type))
+			return visitor.VisitList(res(tt.Schema))
 		case Array:
-			return visitor.VisitArray(res(tt.Type), tt.Count)
+			return visitor.VisitArray(res(tt.Schema), tt.Count)
 		case Optional:
-			return visitor.VisitOptional(res(tt.Type))
+			return visitor.VisitOptional(res(tt.Schema))
 		case Alias:
-			return visitor.VisitAlias(res(tt.Type), tt.Name)
+			return visitor.VisitAlias(res(tt.Schema), tt.Name)
 		default:
 			panic(fmt.Sprintf("unknown type: %T", tt))
 		}
@@ -68,7 +68,7 @@ func DFSFactory[A any](visitor AccumVisitor[A]) func(Type) A {
 	return res
 }
 
-type TypeVisitor interface {
+type SchemaVisitor interface {
 	VisitBit(Bit)
 	VisitInt(Int)
 	VisitUint(Uint)
@@ -116,167 +116,166 @@ const (
 	AliasKind
 )
 
-// TODO: rename to schema?
-type Type interface {
-	Visit(TypeVisitor)
+type Schema interface {
+	Visit(SchemaVisitor)
 	Kind() Kind
 	// TODO: get value?
 }
 
 // TODO: is needed?
-type TypeValue interface {
-	isTypeValue()
+type SchemaValue interface {
+	isSchemaValue()
 	Kind() Kind
 }
 
 type Bit struct{}
 
-func (bit Bit) Visit(visitor TypeVisitor) { visitor.VisitBit(bit) }
-func (Bit) Kind() Kind                    { return BitKind }
+func (bit Bit) Visit(visitor SchemaVisitor) { visitor.VisitBit(bit) }
+func (Bit) Kind() Kind                      { return BitKind }
 
 type BitValue bool
 
-func (BitValue) isTypeValue() {}
-func (BitValue) Kind() Kind   { return BitKind }
+func (BitValue) isSchemaValue() {}
+func (BitValue) Kind() Kind     { return BitKind }
 
 type Int struct{}
 
-func (intt Int) Visit(visitor TypeVisitor) { visitor.VisitInt(intt) }
-func (Int) Kind() Kind                     { return IntKind }
+func (intt Int) Visit(visitor SchemaVisitor) { visitor.VisitInt(intt) }
+func (Int) Kind() Kind                       { return IntKind }
 
 type IntValue int
 
-func (IntValue) isTypeValue() {}
-func (IntValue) Kind() Kind   { return IntKind }
+func (IntValue) isSchemaValue() {}
+func (IntValue) Kind() Kind     { return IntKind }
 
 type Uint struct{}
 
-func (uintt Uint) Visit(visitor TypeVisitor) { visitor.VisitUint(uintt) }
-func (Uint) Kind() Kind                      { return UintKind }
+func (uintt Uint) Visit(visitor SchemaVisitor) { visitor.VisitUint(uintt) }
+func (Uint) Kind() Kind                        { return UintKind }
 
 type UintValue uint
 
-func (UintValue) isTypeValue() {}
-func (UintValue) Kind() Kind   { return UintKind }
+func (UintValue) isSchemaValue() {}
+func (UintValue) Kind() Kind     { return UintKind }
 
 type Rune struct{}
 
-func (runee Rune) Visit(visitor TypeVisitor) { visitor.VisitRune(runee) }
-func (Rune) Kind() Kind                      { return RuneKind }
+func (runee Rune) Visit(visitor SchemaVisitor) { visitor.VisitRune(runee) }
+func (Rune) Kind() Kind                        { return RuneKind }
 
 type RuneValue rune
 
-func (RuneValue) isTypeValue() {}
-func (RuneValue) Kind() Kind   { return RuneKind }
+func (RuneValue) isSchemaValue() {}
+func (RuneValue) Kind() Kind     { return RuneKind }
 
 type Enum struct {
 	Values []string
 }
 
-func (enum Enum) Visit(visitor TypeVisitor) { visitor.VisitEnum(enum) }
-func (Enum) Kind() Kind                     { return EnumKind }
+func (enum Enum) Visit(visitor SchemaVisitor) { visitor.VisitEnum(enum) }
+func (Enum) Kind() Kind                       { return EnumKind }
 
 type EnumValue uint
 
-func (EnumValue) isTypeValue() {}
-func (EnumValue) Kind() Kind   { return EnumKind }
+func (EnumValue) isSchemaValue() {}
+func (EnumValue) Kind() Kind     { return EnumKind }
 
 type EnumInt struct {
 	Min int
 	Max int
 }
 
-func (enumInt EnumInt) Visit(visitor TypeVisitor) { visitor.VisitEnumInt(enumInt) }
-func (EnumInt) Kind() Kind                        { return EnumIntKind }
+func (enumInt EnumInt) Visit(visitor SchemaVisitor) { visitor.VisitEnumInt(enumInt) }
+func (EnumInt) Kind() Kind                          { return EnumIntKind }
 
 // TODO: int64
 type EnumIntValue int
 
-func (EnumIntValue) isTypeValue() {}
-func (EnumIntValue) Kind() Kind   { return EnumIntKind }
+func (EnumIntValue) isSchemaValue() {}
+func (EnumIntValue) Kind() Kind     { return EnumIntKind }
 
-type Product []Type
+type Product []Schema
 
-func (product Product) Visit(visitor TypeVisitor) { visitor.VisitProduct(product) }
-func (Product) Kind() Kind                        { return ProductKind }
+func (product Product) Visit(visitor SchemaVisitor) { visitor.VisitProduct(product) }
+func (Product) Kind() Kind                          { return ProductKind }
 
-type ProductValue []TypeValue
+type ProductValue []SchemaValue
 
-func (ProductValue) isTypeValue() {}
-func (ProductValue) Kind() Kind   { return ProductKind }
+func (ProductValue) isSchemaValue() {}
+func (ProductValue) Kind() Kind     { return ProductKind }
 
-type Coproduct []Type
+type Coproduct []Schema
 
-func (coproduct Coproduct) Visit(visitor TypeVisitor) { visitor.VisitCoproduct(coproduct) }
-func (Coproduct) Kind() Kind                          { return CoproductKind }
+func (coproduct Coproduct) Visit(visitor SchemaVisitor) { visitor.VisitCoproduct(coproduct) }
+func (Coproduct) Kind() Kind                            { return CoproductKind }
 
 type CoproductValue struct {
-	TypeValue
+	SchemaValue
 	Variant uint
 }
 
-func (CoproductValue) isTypeValue() {}
-func (CoproductValue) Kind() Kind   { return CoproductKind }
+func (CoproductValue) isSchemaValue() {}
+func (CoproductValue) Kind() Kind     { return CoproductKind }
 
 type List struct {
-	Type
+	Schema
 }
 
-func (list List) Visit(visitor TypeVisitor) { visitor.VisitList(list) }
-func (List) Kind() Kind                     { return ListKind }
+func (list List) Visit(visitor SchemaVisitor) { visitor.VisitList(list) }
+func (List) Kind() Kind                       { return ListKind }
 
-type ListValue []TypeValue
+type ListValue []SchemaValue
 
-func (ListValue) isTypeValue() {}
-func (ListValue) Kind() Kind   { return ListKind }
+func (ListValue) isSchemaValue() {}
+func (ListValue) Kind() Kind     { return ListKind }
 
 type Array struct {
-	Type
+	Schema
 	Count uint
 }
 
-func (array Array) Visit(visitor TypeVisitor) { visitor.VisitArray(array) }
-func (Array) Kind() Kind                      { return ArrayKind }
+func (array Array) Visit(visitor SchemaVisitor) { visitor.VisitArray(array) }
+func (Array) Kind() Kind                        { return ArrayKind }
 
-type ArrayValue []TypeValue
+type ArrayValue []SchemaValue
 
-func (ArrayValue) isTypeValue() {}
-func (ArrayValue) Kind() Kind   { return ArrayKind }
+func (ArrayValue) isSchemaValue() {}
+func (ArrayValue) Kind() Kind     { return ArrayKind }
 
 type Optional struct {
-	Type
+	Schema
 }
 
-func (optional Optional) Visit(visitor TypeVisitor) { visitor.VisitOptional(optional) }
-func (Optional) Kind() Kind                         { return OptionalKind }
+func (optional Optional) Visit(visitor SchemaVisitor) { visitor.VisitOptional(optional) }
+func (Optional) Kind() Kind                           { return OptionalKind }
 
 type OptionalValue struct {
-	TypeValue
+	SchemaValue
 	IsValid bool
 }
 
-func (OptionalValue) isTypeValue() {}
-func (OptionalValue) Kind() Kind   { return OptionalKind }
+func (OptionalValue) isSchemaValue() {}
+func (OptionalValue) Kind() Kind     { return OptionalKind }
 
 // TODO: alias in alias???
 type Alias struct {
-	Type
+	Schema
 	Name string
 }
 
-func (alias Alias) Visit(visitor TypeVisitor) { visitor.VisitAlias(alias) }
-func (Alias) Kind() Kind                      { return AliasKind }
+func (alias Alias) Visit(visitor SchemaVisitor) { visitor.VisitAlias(alias) }
+func (Alias) Kind() Kind                        { return AliasKind }
 
 type AliasValue struct {
 	Name  string
-	Value TypeValue
+	Value SchemaValue
 }
 
-func (AliasValue) isTypeValue() {}
-func (AliasValue) Kind() Kind   { return AliasKind }
+func (AliasValue) isSchemaValue() {}
+func (AliasValue) Kind() Kind     { return AliasKind }
 
-// type TypeWithMetadata struct {
-// 	Type
+// type SchemaWithMetadata struct {
+// 	Schema
 // 	KVMeta    map[string]string
 // 	FlagsMeta map[string]struct{}
 // }

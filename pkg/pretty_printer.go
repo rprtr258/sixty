@@ -73,7 +73,7 @@ func (visitor *prettyPrinter) VisitList(list List) {
 	visitor.writeString("[]")
 	tmp := visitor.ident
 	visitor.ident = 0
-	list.Type.Visit(visitor)
+	list.Schema.Visit(visitor)
 	visitor.ident = tmp
 }
 
@@ -81,7 +81,7 @@ func (visitor *prettyPrinter) VisitArray(array Array) {
 	visitor.writeString(fmt.Sprintf("[%d]", array.Count))
 	tmp := visitor.ident
 	visitor.ident = 0
-	array.Type.Visit(visitor)
+	array.Schema.Visit(visitor)
 	visitor.ident = tmp
 }
 
@@ -89,7 +89,7 @@ func (visitor *prettyPrinter) VisitOptional(optional Optional) {
 	visitor.writeString("?")
 	tmp := visitor.ident
 	visitor.ident = 0
-	optional.Type.Visit(visitor)
+	optional.Schema.Visit(visitor)
 	visitor.ident = tmp
 }
 
@@ -107,7 +107,7 @@ func (visitor *prettyPrinter) VisitAlias(alias Alias) {
 		return
 	}
 	pp := prettyPrinter{aliases: visitor.aliases}
-	alias.Type.Visit(&pp)
+	alias.Schema.Visit(&pp)
 	visitor.aliases[alias.Name] = pp.String()
 }
 
@@ -121,7 +121,7 @@ func (visitor *prettyPrinter) String() string {
 	return strings.Join(s3, "") + visitor.builder.String()
 }
 
-func PrettyPrintSchema(t Type) string {
+func PrettyPrintSchema(t Schema) string {
 	tsv := NewPrettyPrinter()
 	t.Visit(&tsv)
 	return tsv.String()

@@ -38,11 +38,11 @@ func (j *JsonEncoder) VisitProduct(product Product, p ProductValue) {
 	j.builder.WriteString("{")
 	for i, x := range p {
 		// TODO: move out std:types as a separate case
-		if checkTypeValue(product[i], x, AliasKind) && product[i].(Alias).Name[:4] != "std:" {
+		if product[i].Kind() == AliasKind && x.Kind() == AliasKind && product[i].(Alias).Name[:4] != "std:" {
 			j.builder.WriteRune('"')
 			j.builder.WriteString((product[i]).(Alias).Name)
 			j.builder.WriteString(`":`)
-			VisitValue(product[i].(Alias).Type, x.(AliasValue).Value, j)
+			VisitValue(product[i].(Alias).Schema, x.(AliasValue).Value, j)
 		} else {
 			j.builder.WriteRune('"')
 			j.builder.WriteString(fmt.Sprint(i))
@@ -50,43 +50,47 @@ func (j *JsonEncoder) VisitProduct(product Product, p ProductValue) {
 			VisitValue(product[i], x, j)
 		}
 		if i < len(p)-1 {
-			j.builder.WriteString(",")
+			j.builder.WriteRune(',')
 		}
 	}
-	j.builder.WriteString("}")
+	j.builder.WriteRune('}')
 }
-func (j *JsonEncoder) VisitCoproduct(Coproduct, CoproductValue) {
-	// TODO: implement
+func (j *JsonEncoder) VisitCoproduct(coproduct Coproduct, c CoproductValue) {
+	j.builder.WriteString(`{"`)
+	j.builder.WriteString(fmt.Sprint(c.Variant))
+	j.builder.WriteString(`":`)
+	VisitValue(coproduct[c.Variant], c.SchemaValue, j)
+	j.builder.WriteRune('}')
 }
 func (j *JsonEncoder) VisitList(list List, l ListValue) {
-	j.builder.WriteString("[")
+	j.builder.WriteRune('[')
 	for i, x := range l {
-		VisitValue(list.Type, x, j)
+		VisitValue(list.Schema, x, j)
 		if i < len(l)-1 {
-			j.builder.WriteString(",")
+			j.builder.WriteRune(',')
 		}
 	}
-	j.builder.WriteString("]")
+	j.builder.WriteRune(']')
 }
 func (j *JsonEncoder) VisitArray(array Array, a ArrayValue) {
-	j.builder.WriteString("[")
+	j.builder.WriteRune('[')
 	for i, x := range a {
-		VisitValue(array.Type, x, j)
+		VisitValue(array.Schema, x, j)
 		if uint(i) < array.Count-1 {
-			j.builder.WriteString(",")
+			j.builder.WriteRune(',')
 		}
 	}
-	j.builder.WriteString("]")
+	j.builder.WriteRune(']')
 }
 func (j *JsonEncoder) VisitOptional(optional Optional, o OptionalValue) {
 	if !o.IsValid {
 		j.builder.WriteString("null")
 	} else {
-		VisitValue(optional.Type, o.TypeValue, j)
+		VisitValue(optional.Schema, o.SchemaValue, j)
 	}
 }
 func (j *JsonEncoder) VisitAlias(alias Alias, a AliasValue) {
-	VisitValue(alias.Type, a.Value, j)
+	VisitValue(alias.Schema, a.Value, j)
 }
 
 func (j *JsonEncoder) String() string {

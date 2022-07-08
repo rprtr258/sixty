@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	bttvEmotesDB = sixty.List{Type: sixty.Product{
+	bttvEmotesDB = sixty.List{Schema: sixty.Product{
 		sixty.String, // TODO: name as "emote"
 		sixty.List{
 			// TODO: change to const(?) length id
-			Type: sixty.String,
+			Schema: sixty.String,
 		}, // TODO: name as "ids"
 	}}
 	bttvEmotesDBData = sixty.ListValue{sixty.ProductValue{
@@ -46,7 +46,7 @@ var (
 )
 
 // TODO: use to encode string and other primitive types
-func stringToString(s string) sixty.TypeValue {
+func stringToString(s string) sixty.SchemaValue {
 	var l sixty.ListValue
 	for _, c := range s {
 		l = append(l, sixty.RuneValue(c))
@@ -97,7 +97,7 @@ func TestBttvDBPrettyPrinter(t *testing.T) {
 func TestEnumInt(t *testing.T) {
 	schema, err := sixty.ParseSchema(`[](0..255)`)
 	assert.NoError(t, err)
-	assert.Equal(t, sixty.List{Type: sixty.EnumInt{
+	assert.Equal(t, sixty.List{Schema: sixty.EnumInt{
 		Min: 0,
 		Max: 255,
 	}}, schema)

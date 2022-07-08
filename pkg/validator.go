@@ -37,18 +37,18 @@ func (v *Validator) VisitCoproduct(coproduct Coproduct) {
 }
 
 func (v *Validator) VisitList(list List) {
-	list.Type.Visit(v)
+	list.Schema.Visit(v)
 }
 
 func (v *Validator) VisitArray(array Array) {
 	if array.Count < 2 {
 		v.appendError("wrong array length, must be at least 2: %d", array.Count)
 	}
-	array.Type.Visit(v)
+	array.Schema.Visit(v)
 }
 
 func (v *Validator) VisitOptional(optional Optional) {
-	optional.Type.Visit(v)
+	optional.Schema.Visit(v)
 }
 
 func (v *Validator) VisitEnum(enum Enum) {
@@ -65,5 +65,5 @@ func (v *Validator) VisitAlias(alias Alias) {
 	if alias.Name == "" {
 		v.appendError("wrong alias name: %q", alias.Name)
 	}
-	alias.Type.Visit(v)
+	alias.Schema.Visit(v)
 }

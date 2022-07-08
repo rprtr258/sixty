@@ -65,17 +65,17 @@ func (j *ByteEncoder) VisitProduct(product sixty.Product, p sixty.ProductValue) 
 }
 func (j *ByteEncoder) VisitCoproduct(coproduct sixty.Coproduct, c sixty.CoproductValue) {
 	j.writeUint(c.Variant)
-	sixty.VisitValue(coproduct[c.Variant], c.TypeValue, j)
+	sixty.VisitValue(coproduct[c.Variant], c.SchemaValue, j)
 }
 func (j *ByteEncoder) VisitList(list sixty.List, l sixty.ListValue) {
 	j.writeUint(uint(len(l)))
 	for _, x := range l {
-		sixty.VisitValue(list.Type, x, j)
+		sixty.VisitValue(list.Schema, x, j)
 	}
 }
 func (j *ByteEncoder) VisitArray(array sixty.Array, a sixty.ArrayValue) {
 	for _, x := range a {
-		sixty.VisitValue(array.Type, x, j)
+		sixty.VisitValue(array.Schema, x, j)
 	}
 }
 func (j *ByteEncoder) VisitOptional(optional sixty.Optional, o sixty.OptionalValue) {
@@ -83,9 +83,9 @@ func (j *ByteEncoder) VisitOptional(optional sixty.Optional, o sixty.OptionalVal
 		j.writeUint(0)
 	} else {
 		j.writeUint(1)
-		sixty.VisitValue(optional.Type, o.TypeValue, j)
+		sixty.VisitValue(optional.Schema, o.SchemaValue, j)
 	}
 }
 func (j *ByteEncoder) VisitAlias(alias sixty.Alias, a sixty.AliasValue) {
-	sixty.VisitValue(alias.Type, a.Value, j)
+	sixty.VisitValue(alias.Schema, a.Value, j)
 }
