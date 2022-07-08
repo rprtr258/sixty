@@ -1,4 +1,4 @@
-package bytesenc
+package bytes
 
 import (
 	sixty "github.com/rprtr258/sixty/pkg"
