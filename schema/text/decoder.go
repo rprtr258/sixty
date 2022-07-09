@@ -1,6 +1,7 @@
 package text
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -32,10 +33,9 @@ func (r *SchemaReader) Next() (res string) {
 }
 
 func (r *SchemaReader) appendError(format string, args ...any) {
-	args2 := make([]any, len(args)+1)
-	args2[0] = r.pos
-	copy(args2[1:], args)
-	multierr.AppendInto(&r.Error, fmt.Errorf("at position %d: "+format, args2...))
+	multierr.AppendInto(&r.Error, errors.New(
+		fmt.Sprintf("error at position %d: ", r.pos)+fmt.Sprintf(format, args...)),
+	)
 }
 
 func (r *SchemaReader) skip(expected string) {
@@ -81,7 +81,7 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		}
 		arrayLength, err := strconv.Atoi(nextToken)
 		if err != nil {
-			r.appendError("error while parsing int: %w", err)
+			r.appendError("error while parsing int: %v", err)
 		}
 		r.skip("]")
 		return sixty.Array{
@@ -98,7 +98,7 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		r.skip("..")
 		max, err := strconv.ParseInt(r.Next(), 10, 64)
 		if err != nil {
-			r.appendError("error while parsing int: %w", err)
+			r.appendError("error while parsing int: %v", err)
 		}
 		return sixty.EnumInt{
 			Min: min,

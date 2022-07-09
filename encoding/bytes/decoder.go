@@ -11,7 +11,6 @@ import (
 // TODO: byte decoder
 type Decoder struct {
 	// TODO: make private
-	// TODO: change to struct based on io.Writer
 	Buffer sixty.Reader
 }
 
@@ -35,7 +34,12 @@ func (e *Decoder) readInt() int64 {
 	}
 }
 
-// TODO: change to read into Pointer?
+// TODO: error
+func (e *Decoder) appendError(format string, args ...any) {
+	panic(fmt.Sprintf("error at position %d: ", e.Buffer.Pos()) + fmt.Sprintf(format, args...))
+}
+
+// TODO: change to read into pointer?
 func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	switch tt := t.(type) {
 	case sixty.String:
@@ -54,8 +58,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		case 1:
 			return sixty.BitValue(true)
 		default:
-			// TODO: position
-			panic(fmt.Sprintf("expected bit which is either 0 or 1, found: %d", b))
+			e.appendError("expected bit which is either 0 or 1, found: %d", b)
 		}
 	case sixty.Int:
 		return sixty.IntValue(e.readInt())
@@ -69,7 +72,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		if n < uint64(len(tt.Values)) {
 			return sixty.EnumValue(n)
 		}
-		panic(fmt.Sprintf("found %d'th enum value while there are only %d of them", n, len(tt.Values)))
+		e.appendError("found %d'th enum value while there are only %d of them", n, len(tt.Values))
 	case sixty.EnumInt:
 		n := e.readUint()
 		return sixty.EnumIntValue(int64(n) + tt.Min)
@@ -109,7 +112,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 				IsValid:     false,
 			}
 		default:
-			panic(fmt.Sprintf("option variant must be either 0 or 1, but it is %d", isPresent))
+			e.appendError("option variant must be either 0 or 1, but it is %d", isPresent)
 		}
 	case sixty.Alias:
 		return sixty.AliasValue{
@@ -119,6 +122,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	default:
 		panic("something unimplemented")
 	}
+	return nil
 }
 
 func Decode(t sixty.Schema, data []byte) (sixty.SchemaValue, error) {

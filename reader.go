@@ -13,6 +13,7 @@ type Reader struct {
 	buffer []byte
 	start  int
 	end    int
+	pos    uint
 	Error  error
 }
 
@@ -46,6 +47,10 @@ func (r *Reader) loadMore() bool {
 	}
 }
 
+func (r *Reader) Pos() uint {
+	return r.pos
+}
+
 func (r *Reader) ReadByte() (b byte) {
 	if r.Error != nil {
 		return
@@ -58,6 +63,7 @@ func (r *Reader) ReadByte() (b byte) {
 	}
 	b = r.buffer[r.start]
 	r.start++
+	r.pos++
 	return
 }
 
@@ -74,5 +80,6 @@ func (r *Reader) ReadRune() (u rune) {
 	u, n := utf8.DecodeRune(r.buffer[r.start:])
 	// TODO: error reading rune
 	r.start += n
+	r.pos += uint(n)
 	return
 }
