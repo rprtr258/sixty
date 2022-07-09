@@ -40,13 +40,12 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	switch tt := t.(type) {
 	case sixty.String:
 		stringLength := e.readUint()
-		s := make([]rune, 0, stringLength)
+		sb := bytes.Buffer{}
+		sb.Grow(int(stringLength))
 		for i := uint64(0); i < stringLength; i++ {
-			// TODO: rewrite
-			r := e.Buffer.ReadRune()
-			s = append(s, r)
+			sb.WriteRune(e.Buffer.ReadRune())
 		}
-		return sixty.StringValue(s)
+		return sixty.StringValue(sb.String())
 	case sixty.Bit:
 		b := e.Buffer.ReadByte()
 		switch b {
