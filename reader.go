@@ -70,7 +70,7 @@ func (r *Reader) ReadRune() (u rune) {
 			return
 		}
 	}
-	// TODO: rune is not in buffer
+	// TODO: rune is not in buffer, or just implement decode rune myself using ReadByte
 	u, n := utf8.DecodeRune(r.buffer[r.start:])
 	// TODO: error reading rune
 	r.start += n
