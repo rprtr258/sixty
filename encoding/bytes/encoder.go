@@ -2,6 +2,7 @@ package bytes
 
 import (
 	"bytes"
+	"encoding/binary"
 
 	"github.com/rprtr258/sixty"
 )
@@ -14,10 +15,10 @@ type Encoder struct {
 }
 
 func (v *Encoder) writeUint(x uint64) {
-	// TODO: implement
-	switch {
-	case x < 128:
-		v.Buffer.WriteByte(byte(x))
+	buf := make([]byte, 4)
+	n := binary.PutUvarint(buf, x)
+	for i := 0; i < n; i++ {
+		v.Buffer.WriteByte(buf[i])
 	}
 }
 func (v *Encoder) writeInt(x int64) {
