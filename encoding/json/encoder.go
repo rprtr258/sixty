@@ -8,7 +8,7 @@ import (
 )
 
 type Encoder struct {
-	Buffer *bytes.Buffer
+	Buffer sixty.Writer
 }
 
 func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
@@ -94,6 +94,6 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 
 func Encode(t sixty.Schema, v sixty.SchemaValue) string {
 	buffer := bytes.Buffer{}
-	(&Encoder{Buffer: &buffer}).Write(t, v)
+	(&Encoder{Buffer: sixty.NewWriter(&buffer)}).Write(t, v)
 	return buffer.String()
 }

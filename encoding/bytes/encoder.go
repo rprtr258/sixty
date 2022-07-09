@@ -12,11 +12,7 @@ import (
 // TODO: streaming encoder/decoder, with size of element for lists (if it is not known)
 type Encoder struct {
 	// TODO: make unexported
-	Buffer interface {
-		WriteByte(byte) error
-		WriteString(string) (int, error)
-		WriteRune(rune) (int, error)
-	}
+	Buffer sixty.Writer
 }
 
 func (v *Encoder) writeUint(x uint) {
@@ -87,6 +83,6 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 
 func Encode(t sixty.Schema, v sixty.SchemaValue) []byte {
 	var buffer bytes.Buffer
-	(&Encoder{Buffer: &buffer}).Write(t, v)
+	(&Encoder{Buffer: sixty.NewWriter(&buffer)}).Write(t, v)
 	return buffer.Bytes()
 }
