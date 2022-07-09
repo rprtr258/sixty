@@ -195,6 +195,3 @@ func (StringValue) Kind() Kind     { return ListKind }
 // }
 
 // TODO: Metadata String
-
-// TODO: stupid printer
-// TODO: algebraic printer

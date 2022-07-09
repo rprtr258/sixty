@@ -19,3 +19,7 @@ func TestBttvDBPrettyEncode(t *testing.T) {
   []std:string,
 )`, text.PrettyEncode(internal.BttvEmotesDBSchema))
 }
+
+func TestBttvDBAlgebraicEncode(t *testing.T) {
+	assert.Equal(t, "[](std:string*[]std:string)", text.AlgebraicEncode(internal.BttvEmotesDBSchema))
+}

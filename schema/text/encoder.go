@@ -54,12 +54,12 @@ func (e *encoder) Write(t sixty.Schema) {
 	case sixty.Enum:
 		e.builder.WriteRune('{')
 		i := 0
-	iter1:
+	iter_enum:
 		e.builder.WriteString(tt.Values[i])
 		if i < len(tt.Values)-1 {
 			i++
 			e.builder.WriteString(", ")
-			goto iter1
+			goto iter_enum
 		}
 		e.builder.WriteRune('}')
 	case sixty.EnumInt:
@@ -73,13 +73,13 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.builder.WriteString(e.prefix)
 		e.identSize++
 		i := 0
-	iter2:
+	iter_product:
 		e.Write(tt[i])
 		if i < len(tt)-1 {
 			i++
 			e.builder.WriteString(",")
 			e.builder.WriteString(e.prefix)
-			goto iter2
+			goto iter_product
 		}
 		if e.printTrailingComma {
 			e.builder.WriteRune(',')
@@ -92,13 +92,13 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.builder.WriteString(e.prefix)
 		e.identSize++
 		i := 0
-	iter3:
+	iter_coproduct:
 		e.Write(tt[i])
 		if i < len(tt)-1 {
 			i++
 			e.builder.WriteString(",")
 			e.builder.WriteString(e.prefix)
-			goto iter3
+			goto iter_coproduct
 		}
 		if e.printTrailingComma {
 			e.builder.WriteRune(',')
