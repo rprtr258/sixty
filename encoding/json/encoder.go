@@ -23,6 +23,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 			e.Buffer.WriteString("false")
 		}
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Int, sixty.IntValue](t, v); ok {
+		// TODO: change to strconv
 		e.Buffer.WriteString(fmt.Sprint(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Uint, sixty.UintValue](t, v); ok {
 		e.Buffer.WriteString(fmt.Sprint(vv))
