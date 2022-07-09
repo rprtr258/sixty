@@ -10,9 +10,9 @@ type Size int
 
 const Inf Size = -1
 
-// TODO: own log2 on int and uint for bit encoder/decoder
+// TODO: own log2 for bit encoder/decoder
 // https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious
-func log2(x int) Size {
+func log2(x uint64) Size {
 	return Size(math.Ceil(math.Log2(float64(x))))
 }
 
@@ -50,9 +50,9 @@ func SchemaSize(t Schema) Size {
 	case Rune:
 		return Inf
 	case Enum:
-		return log2(len(tt.Values))
+		return log2(uint64(len(tt.Values)))
 	case EnumInt:
-		return log2((tt.Max - tt.Min))
+		return log2(uint64(tt.Max - tt.Min))
 	case Product:
 		sum := Size(0)
 		for _, x := range tt {
@@ -67,7 +67,7 @@ func SchemaSize(t Schema) Size {
 				max = xSize
 			}
 		}
-		max.Add(log2(len(tt)))
+		max.Add(log2(uint64(len(tt))))
 		return max
 	case List:
 		return Inf

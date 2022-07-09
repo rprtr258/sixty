@@ -78,32 +78,32 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		nextToken := r.Next()
 		if nextToken == "]" {
 			return sixty.List{Schema: r.ParseSchema()}
-		} else {
-			arrayLength, err := strconv.Atoi(nextToken)
-			if err != nil {
-				r.appendError("error while parsing int: %w", err)
-			}
-			r.skip("]")
-			return sixty.Array{
-				Schema: r.ParseSchema(),
-				Count:  uint(arrayLength),
-			}
+		}
+		arrayLength, err := strconv.Atoi(nextToken)
+		if err != nil {
+			r.appendError("error while parsing int: %w", err)
+		}
+		r.skip("]")
+		return sixty.Array{
+			Schema: r.ParseSchema(),
+			Count:  uint(arrayLength),
 		}
 	case "(":
 		nextToken := r.Peek()
-		if min, err := strconv.Atoi(nextToken); err == nil {
-			r.Next()
-			r.skip("..")
-			max, err := strconv.Atoi(r.Next())
-			if err != nil {
-				r.appendError("error while parsing int: %w", err)
-			}
-			return sixty.EnumInt{
-				Min: min,
-				Max: max,
-			}
+		min, err := strconv.ParseInt(nextToken, 10, 64)
+		if err != nil {
+			return sixty.Product(r.ParseCommaSeparatedSchemas(")"))
 		}
-		return sixty.Product(r.ParseCommaSeparatedSchemas(")"))
+		r.Next()
+		r.skip("..")
+		max, err := strconv.ParseInt(r.Next(), 10, 64)
+		if err != nil {
+			r.appendError("error while parsing int: %w", err)
+		}
+		return sixty.EnumInt{
+			Min: min,
+			Max: max,
+		}
 	case "{":
 		return sixty.Coproduct(r.ParseCommaSeparatedSchemas("}"))
 	// TODO: enum

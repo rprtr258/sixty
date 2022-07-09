@@ -13,26 +13,21 @@ type Encoder struct {
 	Buffer sixty.Writer
 }
 
-func (v *Encoder) writeUint(x uint) {
+func (v *Encoder) writeUint(x uint64) {
 	// TODO: implement
 	switch {
 	case x < 128:
 		v.Buffer.WriteByte(byte(x))
 	}
 }
-func (v *Encoder) writeInt(x int) {
-	if x > 0 {
-		v.writeUint(uint(x) * 2)
-	} else {
-		// TODO: fix and test overflow
-		// TODO: (x>>31) ^ (x<<1) for x int32
-		v.writeUint(uint(-2*x) - 1)
-	}
+func (v *Encoder) writeInt(x int64) {
+	// TODO: test overflow
+	v.writeUint(uint64((x >> 63) ^ (x << 1)))
 }
 
 func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
-		e.writeUint(uint(len(vv)))
+		e.writeUint(uint64(len(vv)))
 		e.Buffer.WriteString(string(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Bit, sixty.BitValue](t, v); ok {
 		if vv {
@@ -41,24 +36,24 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 			e.Buffer.WriteByte(0)
 		}
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Int, sixty.IntValue](t, v); ok {
-		e.writeInt(int(vv))
+		e.writeInt(int64(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Uint, sixty.UintValue](t, v); ok {
-		e.writeUint(uint(vv))
+		e.writeUint(uint64(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Rune, sixty.RuneValue](t, v); ok {
 		e.Buffer.WriteRune(rune(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Enum, sixty.EnumValue](t, v); ok {
-		e.writeUint(uint(vv))
+		e.writeUint(uint64(vv))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.EnumInt, sixty.EnumIntValue](t, v); ok {
-		e.writeUint(uint(int(vv) - tt.Min))
+		e.writeUint(uint64(int64(vv) - tt.Min))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		for i, x := range vv {
 			e.Write(tt[i], x)
 		}
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
-		e.writeUint(vv.Variant)
+		e.writeUint(uint64(vv.Variant))
 		e.Write(tt[vv.Variant], vv.SchemaValue)
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
-		e.writeUint(uint(len(vv)))
+		e.writeUint(uint64(len(vv)))
 		for _, x := range vv {
 			e.Write(tt.Schema, x)
 		}

@@ -74,7 +74,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		panic(fmt.Sprintf("found %d'th enum value while there are only %d of them", n, len(tt.Values)))
 	case sixty.EnumInt:
 		n := e.readUint()
-		return sixty.EnumIntValue(int(n) + tt.Min)
+		return sixty.EnumIntValue(int64(n) + tt.Min)
 	case sixty.Product:
 		res := make([]sixty.SchemaValue, 0, len(tt))
 		for _, x := range tt {

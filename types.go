@@ -92,14 +92,13 @@ func (EnumValue) isSchemaValue() {}
 func (EnumValue) Kind() Kind     { return EnumKind }
 
 type EnumInt struct {
-	Min int
-	Max int
+	Min int64
+	Max int64
 }
 
 func (EnumInt) Kind() Kind { return EnumIntKind }
 
-// TODO: int64
-type EnumIntValue int
+type EnumIntValue int64
 
 func (EnumIntValue) isSchemaValue() {}
 func (EnumIntValue) Kind() Kind     { return EnumIntKind }

@@ -59,9 +59,9 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.builder.WriteRune('}')
 	case sixty.EnumInt:
 		e.builder.WriteRune('(')
-		e.builder.WriteString(strconv.Itoa(tt.Min))
+		e.builder.WriteString(strconv.FormatInt(tt.Min, 10))
 		e.builder.WriteString("..")
-		e.builder.WriteString(strconv.Itoa(tt.Max))
+		e.builder.WriteString(strconv.FormatInt(tt.Max, 10))
 		e.builder.WriteRune(')')
 	case sixty.Product:
 		e.builder.WriteRune('(')
