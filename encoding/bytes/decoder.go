@@ -12,16 +12,13 @@ import (
 type Decoder struct {
 	// TODO: make private
 	// TODO: change to struct based on io.Writer
-	Buffer interface {
-		ReadByte() (byte, error)
-		ReadRune() (rune, int, error)
-	}
+	Buffer sixty.Reader
 }
 
 func (e *Decoder) readUint() uint64 {
 	// TODO: implement
 	// TODO: error handling
-	b, _ := e.Buffer.ReadByte()
+	b := e.Buffer.ReadByte()
 	switch {
 	case b < 128:
 		return uint64(b)
@@ -47,12 +44,12 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		s := make([]rune, 0, stringLength)
 		for i := uint64(0); i < stringLength; i++ {
 			// TODO: rewrite
-			r, _, _ := e.Buffer.ReadRune()
+			r := e.Buffer.ReadRune()
 			s = append(s, r)
 		}
 		return sixty.StringValue(s)
 	case sixty.Bit:
-		b, _ := e.Buffer.ReadByte()
+		b := e.Buffer.ReadByte()
 		switch b {
 		case 0:
 			return sixty.BitValue(false)
@@ -67,7 +64,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	case sixty.Uint:
 		return sixty.UintValue(e.readUint())
 	case sixty.Rune:
-		r, _, _ := e.Buffer.ReadRune()
+		r := e.Buffer.ReadRune()
 		return sixty.RuneValue(r)
 	case sixty.Enum:
 		n := e.readUint()
@@ -104,7 +101,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		}
 		return sixty.ArrayValue(res)
 	case sixty.Optional:
-		isPresent, _ := e.Buffer.ReadByte()
+		isPresent := e.Buffer.ReadByte()
 		switch isPresent {
 		case 0:
 			return sixty.OptionalValue{IsValid: false}
@@ -128,5 +125,5 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 
 func Decode(t sixty.Schema, data []byte) sixty.SchemaValue {
 	buffer := bytes.NewBuffer(data)
-	return (&Decoder{Buffer: buffer}).Read(t)
+	return (&Decoder{Buffer: sixty.NewReader(buffer)}).Read(t)
 }
