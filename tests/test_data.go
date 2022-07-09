@@ -1,0 +1,40 @@
+package tests
+
+import sixty "github.com/rprtr258/sixty/pkg"
+
+// TODO: funcs to encode some primitive/logical types
+
+var (
+	BttvEmotesDBSchema = sixty.List{Schema: sixty.Product{
+		sixty.String{}, // TODO: name as "emote"
+		sixty.List{
+			// TODO: change to const(?) length id
+			Schema: sixty.String{},
+		}, // TODO: name as "ids"
+	}}
+	BttvEmotesDBData = sixty.ListValue{sixty.ProductValue{
+		sixty.StringValue("Kappa"),
+		sixty.ListValue{
+			sixty.StringValue("KappaOwner1"),
+			sixty.StringValue("KappaOwner2"),
+		},
+	}, sixty.ProductValue{
+		sixty.StringValue("PogChamp"),
+		sixty.ListValue{
+			sixty.StringValue("PogChampOwner1"),
+			sixty.StringValue("PogChampOwner2"),
+		},
+	}}
+	BttvEmotesDBBytes = []byte{
+		0x2,
+		0x5, 0x4b, 0x61, 0x70, 0x70, 0x61, // "Kappa"
+		0x2,
+		0xb, 0x4b, 0x61, 0x70, 0x70, 0x61, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x31, // "KappaOwner1"
+		0xb, 0x4b, 0x61, 0x70, 0x70, 0x61, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x32, // "KappaOwner2"
+		0x8, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, // "PogChamp"
+		0x2,
+		0xe, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x31, // "PogChampOwner1"
+		0xe, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x32, // "PogChampOwner2"
+	}
+	BttvEmotesDBJson = `[{"0":"Kappa","1":["KappaOwner1","KappaOwner2"]},{"0":"PogChamp","1":["PogChampOwner1","PogChampOwner2"]}]`
+)
