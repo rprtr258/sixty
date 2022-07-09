@@ -1,11 +1,12 @@
 package text
 
 import (
-	"log"
+	"fmt"
 	"regexp"
 	"strconv"
 
 	"github.com/rprtr258/sixty"
+	"go.uber.org/multierr"
 )
 
 var TokenRegex = regexp.MustCompile(`(\[|\]|\(|\)|\{|\}|,|\?|\d+|std:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)
@@ -13,9 +14,12 @@ var TokenRegex = regexp.MustCompile(`(\[|\]|\(|\)|\{|\}|,|\?|\d+|std:(string)|[a
 type SchemaReader struct {
 	tokens [][]byte
 	index  uint
+	pos    uint
+	Error  error
 }
 
 // TODO: unexpected eof
+// TODO: get back instead?
 func (r *SchemaReader) Peek() string {
 	return string(r.tokens[r.index])
 }
@@ -23,19 +27,40 @@ func (r *SchemaReader) Peek() string {
 func (r *SchemaReader) Next() (res string) {
 	res = string(r.tokens[r.index])
 	r.index++
+	r.pos += uint(len(res))
 	return
 }
 
+func (r *SchemaReader) appendError(format string, args ...any) {
+	args2 := make([]any, len(args)+1)
+	args2[0] = r.pos
+	copy(args2[1:], args)
+	multierr.AppendInto(&r.Error, fmt.Errorf("at position %d: "+format, args2...))
+}
+
+func (r *SchemaReader) skip(expected string) {
+	token := r.Peek()
+	if token != expected {
+		r.appendError("expected %s, found %s", token, expected)
+	} else {
+		r.Next()
+	}
+}
+
+// TODO: trailing comma
 func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.Schema) {
 	for {
 		res = append(res, r.ParseSchema())
 		nextToken := r.Next()
 		if nextToken == endToken {
 			return
-		} // TODO: else assert ","
+		} else if nextToken != "," {
+			r.appendError("expected ',' but found %q", nextToken)
+		}
 	}
 }
 
+// TODo: skip spaces
 func (r *SchemaReader) ParseSchema() sixty.Schema {
 	token := r.Next()
 	switch token {
@@ -56,9 +81,9 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		} else {
 			arrayLength, err := strconv.Atoi(nextToken)
 			if err != nil {
-				log.Fatalln(err.Error())
+				r.appendError("error while parsing int: %w", err)
 			}
-			r.Next() // TODO: assert "]"
+			r.skip("]")
 			return sixty.Array{
 				Schema: r.ParseSchema(),
 				Count:  uint(arrayLength),
@@ -68,10 +93,10 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		nextToken := r.Peek()
 		if min, err := strconv.Atoi(nextToken); err == nil {
 			r.Next()
-			r.Next() // TODO: assert ..
+			r.skip("..")
 			max, err := strconv.Atoi(r.Next())
 			if err != nil {
-				panic(err.Error())
+				r.appendError("error while parsing int: %w", err)
 			}
 			return sixty.EnumInt{
 				Min: min,
@@ -102,7 +127,7 @@ func ParseSchema(s string) (sixty.Schema, error) {
 	return reader.ParseSchema(), nil
 }
 
-func MustParseSchema(s string) sixty.Schema {
+func MustParse(s string) sixty.Schema {
 	res, err := ParseSchema(s)
 	if err != nil {
 		panic(err)

@@ -23,7 +23,7 @@ func (e *Decoder) readUint() uint64 {
 	case b < 128:
 		return uint64(b)
 	}
-	panic("not implemented")
+	panic("not implemented decoding uints larger than 127")
 }
 
 // TODO: fix overflow
@@ -123,7 +123,9 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	}
 }
 
-func Decode(t sixty.Schema, data []byte) sixty.SchemaValue {
+func Decode(t sixty.Schema, data []byte) (sixty.SchemaValue, error) {
 	buffer := bytes.NewBuffer(data)
-	return (&Decoder{Buffer: sixty.NewReader(buffer)}).Read(t)
+	decoder := Decoder{Buffer: sixty.NewReader(buffer)}
+	res := decoder.Read(t)
+	return res, decoder.Buffer.Error
 }
