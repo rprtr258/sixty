@@ -7,7 +7,6 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-// TODO: streaming encoder/decoder, with size of element for lists (if it is not known)
 type Encoder struct {
 	buffer     sixty.Writer
 	uintBuffer []byte
@@ -23,6 +22,7 @@ func (v *Encoder) writeInt(x int64) {
 	v.writeUint(sixty.ToZigZag(x))
 }
 
+// TODO: out arg
 func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
 		e.writeUint(uint64(len(vv)))

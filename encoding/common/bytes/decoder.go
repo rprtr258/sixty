@@ -1,25 +1,24 @@
-package bit
+package bytes
 
 import (
 	"bytes"
 	"fmt"
-	"math/bits"
 
-	"github.com/icza/bitio"
 	"github.com/rprtr258/sixty"
 )
 
 type Decoder struct {
-	buffer *bitio.CountReader
+	buffer sixty.Reader
 }
 
 func (e *Decoder) readUint() uint64 {
-	n := 1
-	for e.buffer.TryReadBool() {
-		n++
+	// TODO: implement
+	b := e.buffer.ReadByte()
+	switch {
+	case b < 128:
+		return uint64(b)
 	}
-	res := e.buffer.TryReadBits(uint8(n))
-	return res
+	panic("not implemented decoding uints larger than 127")
 }
 
 func (e *Decoder) readInt() int64 {
@@ -28,36 +27,44 @@ func (e *Decoder) readInt() int64 {
 
 // TODO: error
 func (e *Decoder) appendError(format string, args ...any) {
-	panic(fmt.Sprintf("error at position %d: ", e.buffer.BitsCount) + fmt.Sprintf(format, args...))
+	panic(fmt.Sprintf("error at position %d: ", e.buffer.Pos()) + fmt.Sprintf(format, args...))
 }
 
-// TODO: change to read into pointer?
 func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	switch tt := t.(type) {
 	case sixty.String:
 		stringLength := e.readUint()
-		s := make([]byte, stringLength)
-		// TODO: fix reading unicode
-		e.buffer.TryRead(s)
-		return sixty.StringValue(string(s))
+		sb := bytes.Buffer{}
+		sb.Grow(int(stringLength))
+		for i := uint64(0); i < stringLength; i++ {
+			sb.WriteRune(e.buffer.ReadRune())
+		}
+		return sixty.StringValue(sb.String())
 	case sixty.Bit:
-		return sixty.BitValue(e.buffer.TryReadBool())
+		b := e.buffer.ReadByte()
+		switch b {
+		case 0:
+			return sixty.BitValue(false)
+		case 1:
+			return sixty.BitValue(true)
+		default:
+			e.appendError("expected bit which is either 0 or 1, found: %d", b)
+		}
 	case sixty.Int:
 		return sixty.IntValue(e.readInt())
 	case sixty.Uint:
 		return sixty.UintValue(e.readUint())
 	case sixty.Rune:
-		// TODO: read rune
-		r := e.buffer.TryReadByte()
+		r := e.buffer.ReadRune()
 		return sixty.RuneValue(r)
 	case sixty.Enum:
-		n := e.buffer.TryReadBits(uint8(bits.Len(uint(len(tt.Values)))))
+		n := e.readUint()
 		if n < uint64(len(tt.Values)) {
 			return sixty.EnumValue(n)
 		}
 		e.appendError("found %d'th enum value while there are only %d of them", n, len(tt.Values))
 	case sixty.EnumInt:
-		n := e.buffer.TryReadBits(uint8(bits.Len64(uint64(tt.Max - tt.Min))))
+		n := e.readUint()
 		return sixty.EnumIntValue(int64(n) + tt.Min)
 	case sixty.Product:
 		res := make([]sixty.SchemaValue, 0, len(tt))
@@ -66,7 +73,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		}
 		return sixty.ProductValue(res)
 	case sixty.Coproduct:
-		variant := e.buffer.TryReadBits(uint8(bits.Len(uint(len(tt)))))
+		variant := e.readUint()
 		return sixty.CoproductValue{
 			SchemaValue: e.Read(tt[variant]),
 			Variant:     uint(variant),
@@ -85,7 +92,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		}
 		return sixty.ArrayValue(res)
 	case sixty.Optional:
-		isPresent := e.buffer.TryReadByte()
+		isPresent := e.buffer.ReadByte()
 		switch isPresent {
 		case 0:
 			return sixty.OptionalValue{IsValid: false}
@@ -110,8 +117,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 
 func Decode(t sixty.Schema, data []byte) (sixty.SchemaValue, error) {
 	buffer := bytes.NewBuffer(data)
-	reader := bitio.NewCountReader(buffer)
-	decoder := Decoder{buffer: reader}
+	decoder := Decoder{buffer: sixty.NewReader(buffer)}
 	res := decoder.Read(t)
-	return res, reader.TryError
+	return res, decoder.buffer.Error
 }

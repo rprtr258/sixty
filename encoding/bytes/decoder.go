@@ -30,7 +30,7 @@ func (e *Decoder) appendError(format string, args ...any) {
 	panic(fmt.Sprintf("error at position %d: ", e.buffer.Pos()) + fmt.Sprintf(format, args...))
 }
 
-// TODO: change to read into pointer?
+// TODO: out arg
 func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	switch tt := t.(type) {
 	case sixty.String:
