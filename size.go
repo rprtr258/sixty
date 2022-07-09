@@ -1,6 +1,7 @@
 package sixty
 
 import (
+	"math"
 	"strconv"
 )
 
@@ -8,6 +9,11 @@ import (
 type Size int
 
 const Inf Size = -1
+
+// TODO: own log2 on int and uint for bit encoder/decoder
+func log2(x int) Size {
+	return Size(math.Ceil(math.Log2(float64(x))))
+}
 
 func (x *Size) Add(y Size) *Size {
 	if *x != Inf && y != Inf {
@@ -43,9 +49,9 @@ func SchemaSize(t Schema) Size {
 	case Rune:
 		return Inf
 	case Enum:
-		return Size(Log2(len(tt.Values)))
+		return log2(len(tt.Values))
 	case EnumInt:
-		return Size(Log2((tt.Max - tt.Min)))
+		return log2((tt.Max - tt.Min))
 	case Product:
 		sum := Size(0)
 		for _, x := range tt {
@@ -60,7 +66,7 @@ func SchemaSize(t Schema) Size {
 				max = xSize
 			}
 		}
-		max.Add(Size(Log2(len(tt))))
+		max.Add(log2(len(tt)))
 		return max
 	case List:
 		return Inf

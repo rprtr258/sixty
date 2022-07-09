@@ -1,9 +1,5 @@
 package sixty
 
-import (
-	"math"
-)
-
 type Kind uint
 
 const (
@@ -291,9 +287,3 @@ func (StringValue) Kind() Kind     { return ListKind }
 
 // TODO: stupid printer
 // TODO: algebraic printer
-
-// TODO: move out
-// TODO: own Log2 on int and uint
-func Log2(x int) uint {
-	return uint(math.Ceil(math.Log2(float64(x))))
-}
