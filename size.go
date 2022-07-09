@@ -1,7 +1,6 @@
 package sixty
 
 import (
-	"math"
 	"strconv"
 )
 
@@ -10,10 +9,11 @@ type Size int
 
 const Inf Size = -1
 
-// TODO: own log2 for bit encoder/decoder
-// https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious
-func log2(x uint64) Size {
-	return Size(math.Ceil(math.Log2(float64(x))))
+func log2(x uint64) (res Size) {
+	for ; x > 0; x >>= 1 {
+		res++
+	}
+	return
 }
 
 func (x *Size) Add(y Size) *Size {
