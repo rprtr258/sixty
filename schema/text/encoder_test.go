@@ -10,8 +10,12 @@ import (
 )
 
 func TestBttvDBEncode(t *testing.T) {
+	assert.Equal(t, `[](std:string,[]std:string)`, text.Encode(internal.BttvEmotesDBSchema))
+}
+
+func TestBttvDBPrettyEncode(t *testing.T) {
 	assert.Equal(t, `[](
   std:string,
   []std:string,
-)`, text.Encoder(internal.BttvEmotesDBSchema))
+)`, text.PrettyEncode(internal.BttvEmotesDBSchema))
 }
