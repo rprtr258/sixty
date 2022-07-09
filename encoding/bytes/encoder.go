@@ -81,8 +81,9 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	}
 }
 
-func Encode(t sixty.Schema, v sixty.SchemaValue) []byte {
+func Encode(t sixty.Schema, v sixty.SchemaValue) ([]byte, error) {
 	var buffer bytes.Buffer
-	(&Encoder{Buffer: sixty.NewWriter(&buffer)}).Write(t, v)
-	return buffer.Bytes()
+	encoder := Encoder{Buffer: sixty.NewWriter(&buffer)}
+	encoder.Write(t, v)
+	return buffer.Bytes(), encoder.Buffer.Error
 }

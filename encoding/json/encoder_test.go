@@ -10,6 +10,7 @@ import (
 )
 
 func TestBttvDBEncode(t *testing.T) {
-	got := json.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	got, err := json.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	assert.NoError(t, err)
 	assert.Equal(t, internal.BttvEmotesDBJson, got)
 }
