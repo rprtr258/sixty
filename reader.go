@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 )
 
-const readerBufferSize = 1 << 10
+const defaultBufferSize = 1 << 10
 
 type Reader struct {
 	reader io.Reader
@@ -18,14 +18,18 @@ type Reader struct {
 }
 
 // TODO: test NewReader(bytes.NewStringBuffer(""))
-func NewReader(r io.Reader) Reader {
+func NewReaderBufferSize(r io.Reader, bufferSize int) Reader {
 	return Reader{
 		reader: r,
-		buffer: make([]byte, readerBufferSize),
+		buffer: make([]byte, bufferSize),
 		Error:  nil,
 		start:  0,
 		end:    0,
 	}
+}
+
+func NewReader(r io.Reader) Reader {
+	return NewReaderBufferSize(r, defaultBufferSize)
 }
 
 func (r *Reader) loadMore() bool {
