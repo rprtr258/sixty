@@ -30,3 +30,23 @@ func TestDecode_EnumInt(t *testing.T) {
 		Max: 255,
 	}})
 }
+
+func TestDecode_Everything(t *testing.T) {
+	assertSchema(
+		t,
+		`[][3][std:string,([-2..2],int,uint,bit,{a,b,c})]`,
+		sixty.List{Schema: sixty.Array{
+			Count: 3,
+			Schema: sixty.Coproduct{
+				sixty.String{},
+				sixty.Product{
+					sixty.EnumInt{Min: -2, Max: 2},
+					sixty.Int{},
+					sixty.Uint{},
+					sixty.Bit{},
+					sixty.Enum{Values: []string{"a", "b", "c"}},
+				},
+			},
+		}},
+	)
+}

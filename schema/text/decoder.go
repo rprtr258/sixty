@@ -40,8 +40,8 @@ func (r *SchemaReader) reduce() (res string) {
 		return
 	}
 	res = string(r.tokens[r.index])
-	r.index++
 	r.pos += uint(len(res))
+	r.index++
 	return
 }
 
@@ -94,7 +94,7 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		nextToken := r.reduce()
 		if nextToken == "]" {
 			return sixty.List{Schema: r.ParseSchema()}
-		} else if num, err := strconv.ParseUint(nextToken, 10, 64); err == nil {
+		} else if num, err := strconv.ParseInt(nextToken, 10, 64); err == nil {
 			if r.reduce() != ".." {
 				r.shift()
 				r.skip("]")
@@ -110,7 +110,7 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 			}
 			r.skip("]")
 			return sixty.EnumInt{
-				Min: int64(num),
+				Min: num,
 				Max: max,
 			}
 		} else {
@@ -120,8 +120,16 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 	case "(":
 		return sixty.Product(r.ParseCommaSeparatedSchemas(")"))
 	case "{":
-		return nil
-	// TODO: enum
+		var vals []string
+	iter:
+		if r.Error != nil {
+			return nil
+		}
+		vals = append(vals, r.reduce())
+		if r.reduce() == "," {
+			goto iter
+		}
+		return sixty.Enum{Values: vals}
 	// TODO: alias
 	case string(sixty.StringKind):
 		return sixty.String{}
