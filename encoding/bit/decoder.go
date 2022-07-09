@@ -21,14 +21,8 @@ func (e *Decoder) readUint() uint64 {
 	return res
 }
 
-// TODO: fix overflow
 func (e *Decoder) readInt() int64 {
-	zigZag := e.readUint()
-	if zigZag%2 == 0 {
-		return int64(zigZag / 2)
-	} else {
-		return int64(zigZag)/(-2) - 1
-	}
+	return sixty.FromZigZag(e.readUint())
 }
 
 // TODO: error

@@ -20,8 +20,7 @@ func (v *Encoder) writeUint(x uint64) {
 	}
 }
 func (v *Encoder) writeInt(x int64) {
-	// TODO: test overflow
-	v.writeUint(uint64((x >> 63) ^ (x << 1)))
+	v.writeUint(sixty.ToZigZag(x))
 }
 
 func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {

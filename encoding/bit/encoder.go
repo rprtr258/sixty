@@ -23,8 +23,7 @@ func (e *Encoder) writeUint(x uint64) {
 	e.buffer.TryWriteBits(x, uint8(n))
 }
 func (e *Encoder) writeInt(x int64) {
-	// TODO: test overflow
-	e.writeUint(uint64((x >> 63) ^ (x << 1)))
+	e.writeUint(sixty.ToZigZag(x))
 }
 
 func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
