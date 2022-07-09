@@ -1,6 +1,7 @@
 package sixty
 
 import (
+	"math/bits"
 	"strconv"
 )
 
@@ -9,11 +10,8 @@ type Size int
 
 const Inf Size = -1
 
-func log2(x uint64) (res Size) {
-	for ; x > 0; x >>= 1 {
-		res++
-	}
-	return
+func log2(x uint64) Size {
+	return Size(bits.Len64(x))
 }
 
 func (x *Size) Add(y Size) *Size {
