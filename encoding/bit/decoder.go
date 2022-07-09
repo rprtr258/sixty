@@ -3,6 +3,7 @@ package bit
 import (
 	"bytes"
 	"fmt"
+	"math/bits"
 
 	"github.com/icza/bitio"
 	"github.com/rprtr258/sixty"
@@ -50,13 +51,13 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		r := e.buffer.TryReadByte()
 		return sixty.RuneValue(r)
 	case sixty.Enum:
-		n := e.readUint()
+		n := e.buffer.TryReadBits(uint8(bits.Len(uint(len(tt.Values)))))
 		if n < uint64(len(tt.Values)) {
 			return sixty.EnumValue(n)
 		}
 		e.appendError("found %d'th enum value while there are only %d of them", n, len(tt.Values))
 	case sixty.EnumInt:
-		n := e.readUint()
+		n := e.buffer.TryReadBits(uint8(bits.Len64(uint64(tt.Max - tt.Min))))
 		return sixty.EnumIntValue(int64(n) + tt.Min)
 	case sixty.Product:
 		res := make([]sixty.SchemaValue, 0, len(tt))
@@ -65,7 +66,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		}
 		return sixty.ProductValue(res)
 	case sixty.Coproduct:
-		variant := e.readUint()
+		variant := e.buffer.TryReadBits(uint8(bits.Len(uint(len(tt)))))
 		return sixty.CoproductValue{
 			SchemaValue: e.Read(tt[variant]),
 			Variant:     uint(variant),

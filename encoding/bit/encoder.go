@@ -41,15 +41,18 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		n := utf8.EncodeRune(runeBuffer, rune(vv))
 		e.buffer.TryWrite(runeBuffer[:n])
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Enum, sixty.EnumValue](t, v); ok {
-		e.writeUint(uint64(vv))
+		u64 := uint64(vv)
+		e.buffer.TryWriteBits(u64, uint8(bits.Len64(u64)))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.EnumInt, sixty.EnumIntValue](t, v); ok {
-		e.writeUint(uint64(int64(vv) - tt.Min))
+		u64 := uint64(int64(vv) - tt.Min)
+		e.buffer.TryWriteBits(u64, uint8(bits.Len64(u64)))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		for i, x := range vv {
 			e.Write(tt[i], x)
 		}
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
-		e.writeUint(uint64(vv.Variant)) // TODO: fixed number of bits
+		u64 := uint64(len(tt))
+		e.buffer.TryWriteBits(u64, uint8(bits.Len64(u64)))
 		e.Write(tt[vv.Variant], vv.SchemaValue)
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.writeUint(uint64(len(vv)))
