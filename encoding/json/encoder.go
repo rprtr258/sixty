@@ -61,21 +61,24 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.Buffer.WriteRune('}')
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.Buffer.WriteRune('[')
-		for i, x := range vv {
-			e.Write(tt.Schema, x)
-			if i < len(vv)-1 {
-				e.Buffer.WriteRune(',')
-			}
+		i := 0
+	iter1:
+		e.Write(tt.Schema, vv[i])
+		if i < len(vv)-1 {
+			i++
+			e.Buffer.WriteRune(',')
+			goto iter1
 		}
 		e.Buffer.WriteRune(']')
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Array, sixty.ArrayValue](t, v); ok {
 		e.Buffer.WriteRune('[')
-		for i, x := range vv {
-			e.Write(tt.Schema, x)
-			// TODO: iter while
-			if uint(i) < tt.Count-1 {
-				e.Buffer.WriteRune(',')
-			}
+		i := uint(0)
+	iter2:
+		e.Write(tt.Schema, vv[i])
+		if i < tt.Count-1 {
+			i++
+			e.Buffer.WriteRune(',')
+			goto iter2
 		}
 		e.Buffer.WriteRune(']')
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Optional, sixty.OptionalValue](t, v); ok {

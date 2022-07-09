@@ -54,8 +54,14 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.builder.WriteString("rune")
 	case sixty.Enum:
 		e.builder.WriteRune('{')
-		// TODO: iter while
-		e.builder.WriteString(strings.Join(tt.Values, ", "))
+		i := 0
+	iter1:
+		e.builder.WriteString(tt.Values[i])
+		if i < len(tt.Values)-1 {
+			i++
+			e.builder.WriteString(", ")
+			goto iter1
+		}
 		e.builder.WriteRune('}')
 	case sixty.EnumInt:
 		e.builder.WriteRune('(')
@@ -67,13 +73,14 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.builder.WriteRune('(')
 		e.builder.WriteString(e.prefix)
 		e.identSize++
-		// TODO: iter-while
-		for i, field := range tt {
-			e.Write(field)
-			if i < len(tt)-1 {
-				e.builder.WriteRune(',')
-				e.builder.WriteString(e.prefix)
-			}
+		i := 0
+	iter2:
+		e.Write(tt[i])
+		if i < len(tt)-1 {
+			i++
+			e.builder.WriteString(",")
+			e.builder.WriteString(e.prefix)
+			goto iter2
 		}
 		if e.printTrailingComma {
 			e.builder.WriteRune(',')
@@ -85,13 +92,14 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.builder.WriteRune('{')
 		e.builder.WriteString(e.prefix)
 		e.identSize++
-		// TODO: iter-while
-		for i, variant := range tt {
-			e.Write(variant)
-			if i < len(tt)-1 {
-				e.builder.WriteRune(',')
-				e.builder.WriteString(e.prefix)
-			}
+		i := 0
+	iter3:
+		e.Write(tt[i])
+		if i < len(tt)-1 {
+			i++
+			e.builder.WriteString(",")
+			e.builder.WriteString(e.prefix)
+			goto iter3
 		}
 		if e.printTrailingComma {
 			e.builder.WriteRune(',')
