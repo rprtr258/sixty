@@ -39,7 +39,6 @@ func NewEncoder(builder strings.Builder) encoder {
 }
 
 func (e *encoder) Write(t sixty.Schema) {
-	// TODO: cache idents
 	e.builder.WriteString(strings.Repeat(e.ident, int(e.identSize)))
 	switch tt := t.(type) {
 	case sixty.String:
