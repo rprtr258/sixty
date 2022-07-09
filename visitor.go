@@ -9,7 +9,6 @@ func AssertSchemas[S Schema, V SchemaValue](t Schema, v SchemaValue) (tt S, vv V
 	return
 }
 
-// TODO: fix,test overflow
 func FromZigZag(x uint64) int64 {
 	if x%2 == 0 {
 		return int64(x / 2)
@@ -18,7 +17,6 @@ func FromZigZag(x uint64) int64 {
 	}
 }
 
-// TODO: fix,test overflow
 func ToZigZag(x int64) uint64 {
 	return uint64((x >> 63) ^ (x << 1))
 }
