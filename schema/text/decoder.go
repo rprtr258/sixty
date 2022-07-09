@@ -125,6 +125,7 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		if r.Error != nil {
 			return nil
 		}
+		// TODO: assert identifier
 		vals = append(vals, r.reduce())
 		if r.reduce() == "," {
 			goto iter
