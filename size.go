@@ -11,6 +11,7 @@ type Size int
 const Inf Size = -1
 
 // TODO: own log2 on int and uint for bit encoder/decoder
+// https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious
 func log2(x int) Size {
 	return Size(math.Ceil(math.Log2(float64(x))))
 }
