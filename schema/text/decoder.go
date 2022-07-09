@@ -19,20 +19,8 @@ type SchemaReader struct {
 	Error  error
 }
 
-// shift moves reader one step back
-func (r *SchemaReader) shift() {
-	if r.index == 0 {
-		r.appendError("trying to shift when index is 0")
-		return
-	}
-	if r.index < uint(len(r.tokens)) {
-		r.pos -= uint(len(r.tokens[r.index]))
-	}
-	r.index--
-}
-
-// reduce gets next token and moves reader one step forward
-func (r *SchemaReader) reduce() (res string) {
+// shift gets next token and moves reader one step forward
+func (r *SchemaReader) shift() (res string) {
 	if r.index == uint(len(r.tokens)) {
 		r.appendError("unexpected eof")
 		return
@@ -43,6 +31,18 @@ func (r *SchemaReader) reduce() (res string) {
 	return
 }
 
+// unshift moves reader one step back
+func (r *SchemaReader) unshift() {
+	if r.index == 0 {
+		r.appendError("trying to shift when index is 0")
+		return
+	}
+	if r.index < uint(len(r.tokens)) {
+		r.pos -= uint(len(r.tokens[r.index]))
+	}
+	r.index--
+}
+
 func (r *SchemaReader) appendError(format string, args ...any) {
 	multierr.AppendInto(&r.Error, errors.New(
 		fmt.Sprintf("error at position %d: ", r.pos)+fmt.Sprintf(format, args...)),
@@ -50,10 +50,10 @@ func (r *SchemaReader) appendError(format string, args ...any) {
 }
 
 func (r *SchemaReader) skip(expected string) {
-	token := r.reduce()
+	token := r.shift()
 	if token != expected {
 		r.appendError("expected %s, found %s", token, expected)
-		r.shift()
+		r.unshift()
 	}
 }
 
@@ -64,19 +64,19 @@ func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.
 			return
 		}
 		res = append(res, r.ParseSchema())
-		nextToken := r.reduce()
+		nextToken := r.shift()
 		if nextToken == endToken {
 			return
 		} else if nextToken != "," {
 			r.appendError("expected ',' but found %q", nextToken)
-			r.shift()
+			r.unshift()
 		}
 	}
 }
 
 // TODo: skip spaces
 func (r *SchemaReader) ParseSchema() sixty.Schema {
-	token := r.reduce()
+	token := r.shift()
 	switch token {
 	case "bit":
 		return sixty.Bit{}
@@ -89,19 +89,19 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 	case "?":
 		return sixty.Optional{Schema: r.ParseSchema()}
 	case "[":
-		nextToken := r.reduce()
+		nextToken := r.shift()
 		if nextToken == "]" {
 			return sixty.List{Schema: r.ParseSchema()}
 		} else if num, err := strconv.ParseInt(nextToken, 10, 64); err == nil {
-			if r.reduce() != ".." {
-				r.shift()
+			if r.shift() != ".." {
+				r.unshift()
 				r.skip("]")
 				return sixty.Array{
 					Schema: r.ParseSchema(),
 					Count:  uint(num),
 				}
 			}
-			max, err := strconv.ParseInt(r.reduce(), 10, 64)
+			max, err := strconv.ParseInt(r.shift(), 10, 64)
 			if err != nil {
 				r.appendError("error while parsing int: %v", err)
 				return nil
@@ -112,7 +112,7 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 				Max: max,
 			}
 		} else {
-			r.shift()
+			r.unshift()
 			return sixty.Coproduct(r.ParseCommaSeparatedSchemas("]"))
 		}
 	case "(":
@@ -124,8 +124,8 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 			return nil
 		}
 		// TODO: assert identifier
-		vals = append(vals, r.reduce())
-		if r.reduce() == "," {
+		vals = append(vals, r.shift())
+		if r.shift() == "," {
 			goto iter
 		}
 		return sixty.Enum{Values: vals}
