@@ -7,11 +7,11 @@ import (
 	sixty "github.com/rprtr258/sixty/pkg"
 )
 
-type JsonEncoder struct {
+type Encoder struct {
 	Buffer *bytes.Buffer
 }
 
-func (e *JsonEncoder) Write(t sixty.Schema, v sixty.SchemaValue) {
+func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
 		e.Buffer.WriteRune('"')
 		e.Buffer.WriteString(string(vv))

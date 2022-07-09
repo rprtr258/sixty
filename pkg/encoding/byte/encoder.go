@@ -8,7 +8,7 @@ import (
 // TODO: byte decoder
 // TODO: compress list/array of bits
 // TODO: streaming encoder/decoder, with size of element for lists (if it is not known)
-type ByteEncoder struct {
+type Encoder struct {
 	// TODO: make unexported
 	Buffer interface {
 		WriteByte(byte) error
@@ -17,14 +17,14 @@ type ByteEncoder struct {
 	}
 }
 
-func (v *ByteEncoder) writeUint(x uint) {
+func (v *Encoder) writeUint(x uint) {
 	// TODO: implement
 	switch {
 	case x < 128:
 		v.Buffer.WriteByte(byte(x))
 	}
 }
-func (v *ByteEncoder) writeInt(x int) {
+func (v *Encoder) writeInt(x int) {
 	if x > 0 {
 		v.writeUint(uint(x) * 2)
 	} else {
@@ -33,7 +33,7 @@ func (v *ByteEncoder) writeInt(x int) {
 	}
 }
 
-func (e *ByteEncoder) Write(t sixty.Schema, v sixty.SchemaValue) {
+func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
 		e.writeUint(uint(len(vv)))
 		e.Buffer.WriteString(string(vv))

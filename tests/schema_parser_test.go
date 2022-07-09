@@ -8,9 +8,9 @@ import (
 
 	// TODO: move everything to root
 	sixty "github.com/rprtr258/sixty/pkg"
-	sixtyBytes "github.com/rprtr258/sixty/pkg/byte"
-	"github.com/rprtr258/sixty/pkg/json"
-	textSchema "github.com/rprtr258/sixty/pkg/text_schema"
+	sixtyBytes "github.com/rprtr258/sixty/pkg/encoding/byte"
+	sixtyJson "github.com/rprtr258/sixty/pkg/encoding/json"
+	textSchema "github.com/rprtr258/sixty/pkg/schema/text"
 )
 
 var (
@@ -55,19 +55,19 @@ func stringToString(s string) sixty.SchemaValue {
 
 func TestBttvDBJsonEncoder(t *testing.T) {
 	buffer := bytes.Buffer{}
-	(&json.JsonEncoder{Buffer: &buffer}).Write(bttvEmotesDBSchema, bttvEmotesDBData)
+	(&sixtyJson.Encoder{Buffer: &buffer}).Write(bttvEmotesDBSchema, bttvEmotesDBData)
 	assert.Equal(t, bttvEmotesDBJson, buffer.String())
 }
 
 func TestBttvDBByteEncoder(t *testing.T) {
 	buffer := bytes.Buffer{}
-	(&sixtyBytes.ByteEncoder{Buffer: &buffer}).Write(bttvEmotesDBSchema, bttvEmotesDBData)
+	(&sixtyBytes.Encoder{Buffer: &buffer}).Write(bttvEmotesDBSchema, bttvEmotesDBData)
 	assert.Equal(t, bttvEmotesDBBytes, buffer.Bytes())
 }
 
 func TestBttvDBByteDecoder(t *testing.T) {
 	buffer := bytes.NewBuffer(bttvEmotesDBBytes)
-	got := (&sixtyBytes.ByteDecoder{Buffer: buffer}).Read(bttvEmotesDBSchema)
+	got := (&sixtyBytes.Decoder{Buffer: buffer}).Read(bttvEmotesDBSchema)
 	assert.Equal(t, bttvEmotesDBData, got)
 }
 
@@ -85,7 +85,7 @@ func TestBttvDBPrettyPrinter(t *testing.T) {
 	assert.Equal(t, `[](
   std:string,
   []std:string,
-)`, textSchema.PrettyPrintSchema(bttvEmotesDBSchema))
+)`, textSchema.Encoder(bttvEmotesDBSchema))
 }
 
 func TestEnumInt(t *testing.T) {

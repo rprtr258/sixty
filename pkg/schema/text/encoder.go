@@ -104,7 +104,7 @@ func (v *prettyPrinter) String() string {
 	return res.String()
 }
 
-func PrettyPrintSchema(t sixty.Schema) string {
+func Encoder(t sixty.Schema) string {
 	tsv := NewPrettyPrinter(strings.Builder{})
 	tsv.Write(t)
 	return tsv.String()

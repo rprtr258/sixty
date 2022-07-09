@@ -8,7 +8,7 @@ import (
 
 // TODO: bit encoder/decoder
 // TODO: byte decoder
-type ByteDecoder struct {
+type Decoder struct {
 	// TODO: make private
 	// TODO: change to struct based on io.Writer
 	Buffer interface {
@@ -17,7 +17,7 @@ type ByteDecoder struct {
 	}
 }
 
-func (e *ByteDecoder) readUint() uint {
+func (e *Decoder) readUint() uint {
 	// TODO: implement
 	// TODO: error handling
 	b, _ := e.Buffer.ReadByte()
@@ -29,7 +29,7 @@ func (e *ByteDecoder) readUint() uint {
 }
 
 // TODO: fix overflow
-func (e *ByteDecoder) readInt() int {
+func (e *Decoder) readInt() int {
 	zigZag := e.readUint()
 	if zigZag%2 == 0 {
 		return int(zigZag / 2)
@@ -39,7 +39,7 @@ func (e *ByteDecoder) readInt() int {
 }
 
 // TODO: change to read into Pointer?
-func (e *ByteDecoder) Read(t sixty.Schema) sixty.SchemaValue {
+func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	switch tt := t.(type) {
 	case sixty.String:
 		stringLength := e.readUint()
