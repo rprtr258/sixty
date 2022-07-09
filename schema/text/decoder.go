@@ -19,8 +19,6 @@ type SchemaReader struct {
 	Error  error
 }
 
-// TODO: unexpected eof
-
 // shift moves reader one step back
 func (r *SchemaReader) shift() {
 	if r.index == 0 {
