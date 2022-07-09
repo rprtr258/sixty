@@ -4,13 +4,15 @@ import "github.com/rprtr258/sixty"
 
 // TODO: funcs to encode some primitive/logical types
 
+// TODO: name fields as in comments
 var (
-	BttvEmotesDBSchema = sixty.List{Schema: sixty.Product{
-		sixty.String{}, // TODO: name as "emote"
-		sixty.List{
+	BttvEmotesDBSchemaString = `[](std:string,[]std:string)`
+	BttvEmotesDBSchema       = sixty.List{Schema: sixty.Product{
+		sixty.String{}, // "emote"
+		sixty.List{ // "ids"
 			// TODO: change to const(?) length id
 			Schema: sixty.String{},
-		}, // TODO: name as "ids"
+		},
 	}}
 	BttvEmotesDBData = sixty.ListValue{sixty.ProductValue{
 		sixty.StringValue("Kappa"),
@@ -37,4 +39,20 @@ var (
 		0xe, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x32, // "PogChampOwner2"
 	}
 	BttvEmotesDBJson = `[{"0":"Kappa","1":["KappaOwner1","KappaOwner2"]},{"0":"PogChamp","1":["PogChampOwner1","PogChampOwner2"]}]`
+)
+
+var (
+	VKInfoSchema = sixty.Coproduct{
+		sixty.Product{ // "group"
+			sixty.Uint{},   // "id"
+			sixty.String{}, // "alias"
+			sixty.String{}, // "name"
+		},
+		sixty.Product{ // "user"
+			sixty.Uint{},   //"id"
+			sixty.String{}, // "first_name"
+			sixty.String{}, // "last_name"
+		},
+	}
+	VKInfoSchemaString = `[(uint,std:string,std:string),(uint,std:string,std:string)]`
 )

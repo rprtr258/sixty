@@ -88,7 +88,7 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.identSize--
 		e.builder.WriteRune(')')
 	case sixty.Coproduct:
-		e.builder.WriteRune('{')
+		e.builder.WriteRune('[')
 		e.builder.WriteString(e.prefix)
 		e.identSize++
 		i := 0
@@ -105,7 +105,7 @@ func (e *encoder) Write(t sixty.Schema) {
 			e.builder.WriteString(e.prefix)
 		}
 		e.identSize--
-		e.builder.WriteRune('}')
+		e.builder.WriteRune(']')
 	case sixty.List:
 		e.builder.WriteString("[]")
 		tmp := e.identSize

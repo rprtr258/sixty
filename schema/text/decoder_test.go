@@ -10,18 +10,23 @@ import (
 	"github.com/rprtr258/sixty/schema/text"
 )
 
-func TestBttvDBDecode(t *testing.T) {
-	schema, err := text.ParseSchema(`[](std:string,[]std:string)`)
+func assertSchema(t *testing.T, schemaString string, expected sixty.Schema) {
+	got, err := text.ParseSchema(schemaString)
 	assert.NoError(t, err)
-	assert.Equal(t, internal.BttvEmotesDBSchema, schema)
+	assert.Equal(t, expected, got)
 }
 
-func TestEnumIntDecode(t *testing.T) {
-	schema, err := text.ParseSchema(`[](0..255)`)
-	assert.NoError(t, err)
-	assert.Equal(t, sixty.List{Schema: sixty.EnumInt{
+func TestDecode_BttvDB(t *testing.T) {
+	assertSchema(t, internal.BttvEmotesDBSchemaString, internal.BttvEmotesDBSchema)
+}
+
+func TestDecode_VKInfo(t *testing.T) {
+	assertSchema(t, internal.VKInfoSchemaString, internal.VKInfoSchema)
+}
+
+func TestDecode_EnumInt(t *testing.T) {
+	assertSchema(t, `[][0..255]`, sixty.List{Schema: sixty.EnumInt{
 		Min: 0,
 		Max: 255,
-	}}, schema)
-
+	}})
 }

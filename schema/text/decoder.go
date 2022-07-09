@@ -20,12 +20,25 @@ type SchemaReader struct {
 }
 
 // TODO: unexpected eof
-// TODO: get back instead?
-func (r *SchemaReader) Peek() string {
-	return string(r.tokens[r.index])
+
+// shift moves reader one step back
+func (r *SchemaReader) shift() {
+	if r.index == 0 {
+		r.appendError("trying to shift when index is 0")
+		return
+	}
+	if r.index < uint(len(r.tokens)) {
+		r.pos -= uint(len(r.tokens[r.index]))
+	}
+	r.index--
 }
 
-func (r *SchemaReader) Next() (res string) {
+// reduce gets next token and moves reader one step forward
+func (r *SchemaReader) reduce() (res string) {
+	if r.index == uint(len(r.tokens)) {
+		r.appendError("unexpected eof")
+		return
+	}
 	res = string(r.tokens[r.index])
 	r.index++
 	r.pos += uint(len(res))
@@ -39,30 +52,33 @@ func (r *SchemaReader) appendError(format string, args ...any) {
 }
 
 func (r *SchemaReader) skip(expected string) {
-	token := r.Peek()
+	token := r.reduce()
 	if token != expected {
 		r.appendError("expected %s, found %s", token, expected)
-	} else {
-		r.Next()
+		r.shift()
 	}
 }
 
 // TODO: trailing comma
 func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.Schema) {
 	for {
+		if r.Error != nil {
+			return
+		}
 		res = append(res, r.ParseSchema())
-		nextToken := r.Next()
+		nextToken := r.reduce()
 		if nextToken == endToken {
 			return
 		} else if nextToken != "," {
 			r.appendError("expected ',' but found %q", nextToken)
+			r.shift()
 		}
 	}
 }
 
 // TODo: skip spaces
 func (r *SchemaReader) ParseSchema() sixty.Schema {
-	token := r.Next()
+	token := r.reduce()
 	switch token {
 	case "bit":
 		return sixty.Bit{}
@@ -75,43 +91,43 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 	case "?":
 		return sixty.Optional{Schema: r.ParseSchema()}
 	case "[":
-		nextToken := r.Next()
+		nextToken := r.reduce()
 		if nextToken == "]" {
 			return sixty.List{Schema: r.ParseSchema()}
-		}
-		arrayLength, err := strconv.Atoi(nextToken)
-		if err != nil {
-			r.appendError("error while parsing int: %v", err)
-		}
-		r.skip("]")
-		return sixty.Array{
-			Schema: r.ParseSchema(),
-			Count:  uint(arrayLength),
+		} else if num, err := strconv.ParseUint(nextToken, 10, 64); err == nil {
+			if r.reduce() != ".." {
+				r.shift()
+				r.skip("]")
+				return sixty.Array{
+					Schema: r.ParseSchema(),
+					Count:  uint(num),
+				}
+			}
+			max, err := strconv.ParseInt(r.reduce(), 10, 64)
+			if err != nil {
+				r.appendError("error while parsing int: %v", err)
+				return nil
+			}
+			r.skip("]")
+			return sixty.EnumInt{
+				Min: int64(num),
+				Max: max,
+			}
+		} else {
+			r.shift()
+			return sixty.Coproduct(r.ParseCommaSeparatedSchemas("]"))
 		}
 	case "(":
-		nextToken := r.Peek()
-		min, err := strconv.ParseInt(nextToken, 10, 64)
-		if err != nil {
-			return sixty.Product(r.ParseCommaSeparatedSchemas(")"))
-		}
-		r.Next()
-		r.skip("..")
-		max, err := strconv.ParseInt(r.Next(), 10, 64)
-		if err != nil {
-			r.appendError("error while parsing int: %v", err)
-		}
-		return sixty.EnumInt{
-			Min: min,
-			Max: max,
-		}
+		return sixty.Product(r.ParseCommaSeparatedSchemas(")"))
 	case "{":
-		return sixty.Coproduct(r.ParseCommaSeparatedSchemas("}"))
+		return nil
 	// TODO: enum
 	// TODO: alias
 	case string(sixty.StringKind):
 		return sixty.String{}
 	default:
-		panic(token)
+		r.appendError("unexpected token %q", token)
+		return nil
 	}
 }
 
@@ -124,7 +140,7 @@ func Tokenize(s string) SchemaReader {
 
 func ParseSchema(s string) (sixty.Schema, error) {
 	reader := Tokenize(s)
-	return reader.ParseSchema(), nil
+	return reader.ParseSchema(), reader.Error
 }
 
 func MustParse(s string) sixty.Schema {

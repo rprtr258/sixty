@@ -9,17 +9,25 @@ import (
 	"github.com/rprtr258/sixty/schema/text"
 )
 
-func TestBttvDBEncode(t *testing.T) {
-	assert.Equal(t, `[](std:string,[]std:string)`, text.Encode(internal.BttvEmotesDBSchema))
+func TestEncode_BttvDB(t *testing.T) {
+	assert.Equal(t, internal.BttvEmotesDBSchemaString, text.Encode(internal.BttvEmotesDBSchema))
 }
 
-func TestBttvDBPrettyEncode(t *testing.T) {
+func TestEncode_VKInfo(t *testing.T) {
+	assert.Equal(t, internal.VKInfoSchemaString, text.Encode(internal.VKInfoSchema))
+}
+
+func TestPrettyEncode_BttvDB(t *testing.T) {
 	assert.Equal(t, `[](
   std:string,
   []std:string,
 )`, text.PrettyEncode(internal.BttvEmotesDBSchema))
 }
 
-func TestBttvDBAlgebraicEncode(t *testing.T) {
-	assert.Equal(t, "[](std:string*[]std:string)", text.AlgebraicEncode(internal.BttvEmotesDBSchema))
+func TestAlgebraicEncode_BttvDB(t *testing.T) {
+	assert.Equal(t, `[](std:string*[]std:string)`, text.AlgebraicEncode(internal.BttvEmotesDBSchema))
+}
+
+func TestAlgebraicEncode_VKInfo(t *testing.T) {
+	assert.Equal(t, `(uint*std:string*std:string)+(uint*std:string*std:string)`, text.AlgebraicEncode(internal.VKInfoSchema))
 }
