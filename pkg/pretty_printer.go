@@ -1,120 +1,109 @@
 package sixty
 
-// type prettyPrinter struct {
-// 	builder strings.Builder
-// 	ident   uint
-// 	aliases map[string]string
-// }
+import (
+	"fmt"
+	"strings"
+)
 
-// func NewPrettyPrinter() prettyPrinter {
-// 	return prettyPrinter{
-// 		ident:   0,
-// 		aliases: make(map[string]string),
-// 		builder: strings.Builder{},
-// 	}
-// }
+type prettyPrinter struct {
+	builder strings.Builder
+	ident   uint
+	aliases map[string]string
+}
 
-// func (visitor *prettyPrinter) writeString(str string) {
-// 	visitor.builder.WriteString(strings.Repeat(" ", int(visitor.ident*2)))
-// 	visitor.builder.WriteString(str)
-// }
+func NewPrettyPrinter(builder strings.Builder) prettyPrinter {
+	return prettyPrinter{
+		ident:   0,
+		aliases: make(map[string]string),
+		builder: builder,
+	}
+}
 
-// func (visitor *prettyPrinter) VisitBit(Bit) {
-// 	visitor.writeString("bit")
-// }
+func (v *prettyPrinter) Write(t Schema) {
+	// TODO: cache idents
+	v.builder.WriteString(strings.Repeat(" ", int(v.ident*2)))
+	switch tt := t.(type) {
+	case String:
+		v.builder.WriteString(string(StringKind))
+	case Bit:
+		v.builder.WriteString("bit")
+	case Int:
+		v.builder.WriteString("int")
+	case Uint:
+		v.builder.WriteString("uint")
+	case Rune:
+		v.builder.WriteString("rune")
+	case Enum:
+		v.builder.WriteRune('{')
+		// TODO: iter while
+		v.builder.WriteString(strings.Join(tt.Values, ", "))
+		v.builder.WriteRune('}')
+	case EnumInt:
+		v.builder.WriteRune('(')
+		v.builder.WriteString(fmt.Sprint(tt.Min))
+		v.builder.WriteString("..")
+		v.builder.WriteString(fmt.Sprint(tt.Max))
+		v.builder.WriteRune(')')
+	case Product:
+		v.builder.WriteString("(\n")
+		v.ident++
+		for _, field := range tt {
+			v.Write(field)
+			v.builder.WriteString(",\n")
+		}
+		v.ident--
+		v.builder.WriteString(")")
+	case Coproduct:
+		v.builder.WriteString("{\n")
+		v.ident++
+		for _, variant := range tt {
+			v.Write(variant)
+			v.builder.WriteString(",\n")
+		}
+		v.ident--
+		v.builder.WriteString("}")
+	case List:
+		v.builder.WriteString("[]")
+		tmp := v.ident
+		v.ident = 0
+		v.Write(tt.Schema)
+		v.ident = tmp
+	case Array:
+		v.builder.WriteString(fmt.Sprintf("[%d]", tt.Count))
+		tmp := v.ident
+		v.ident = 0
+		v.Write(tt.Schema)
+		v.ident = tmp
+	case Optional:
+		v.builder.WriteString("?")
+		tmp := v.ident
+		v.ident = 0
+		v.Write(tt.Schema)
+		v.ident = tmp
+	case Alias:
+		v.builder.WriteString(tt.Name)
+		if _, ok := v.aliases[tt.Name]; ok {
+			return
+		}
+		pp := prettyPrinter{aliases: v.aliases}
+		pp.Write(tt.Schema)
+		v.aliases[tt.Name] = pp.String()
+	default:
+		panic("something unimplemented")
+	}
+}
 
-// func (visitor *prettyPrinter) VisitInt(Int) {
-// 	visitor.writeString("int")
-// }
+func (v *prettyPrinter) String() string {
+	var res strings.Builder
+	for k, v := range v.aliases {
+		res.WriteString(fmt.Sprintf("%s = %s\n\n", k, v))
+	}
+	res.WriteString(v.builder.String())
+	return res.String()
+}
 
-// func (visitor *prettyPrinter) VisitUint(Uint) {
-// 	visitor.writeString("uint")
-// }
-
-// func (visitor *prettyPrinter) VisitRune(Rune) {
-// 	visitor.writeString("rune")
-// }
-
-// func (visitor *prettyPrinter) VisitProduct(product Product) {
-// 	visitor.writeString("(\n")
-// 	visitor.ident++
-
-// 	for _, field := range product {
-// 		field.Visit(visitor)
-// 		visitor.builder.WriteString(",\n")
-// 	}
-
-// 	visitor.ident--
-// 	visitor.writeString(")")
-// }
-
-// func (visitor *prettyPrinter) VisitCoproduct(coproduct Coproduct) {
-// 	visitor.writeString("{\n")
-// 	visitor.ident++
-
-// 	for _, field := range coproduct {
-// 		field.Visit(visitor)
-// 		visitor.builder.WriteString(",\n")
-// 	}
-
-// 	visitor.ident--
-// 	visitor.writeString("}")
-// }
-
-// func (visitor *prettyPrinter) VisitList(list List) {
-// 	visitor.writeString("[]")
-// 	tmp := visitor.ident
-// 	visitor.ident = 0
-// 	list.Schema.Visit(visitor)
-// 	visitor.ident = tmp
-// }
-
-// func (visitor *prettyPrinter) VisitArray(array Array) {
-// 	visitor.writeString(fmt.Sprintf("[%d]", array.Count))
-// 	tmp := visitor.ident
-// 	visitor.ident = 0
-// 	array.Schema.Visit(visitor)
-// 	visitor.ident = tmp
-// }
-
-// func (visitor *prettyPrinter) VisitOptional(optional Optional) {
-// 	visitor.writeString("?")
-// 	tmp := visitor.ident
-// 	visitor.ident = 0
-// 	optional.Schema.Visit(visitor)
-// 	visitor.ident = tmp
-// }
-
-// func (visitor *prettyPrinter) VisitEnum(enum Enum) {
-// 	visitor.writeString(fmt.Sprintf("{%s}", strings.Join(enum.Values, ", ")))
-// }
-
-// func (visitor *prettyPrinter) VisitEnumInt(enumInt EnumInt) {
-// 	visitor.writeString(fmt.Sprintf("(%d..%d)", enumInt.Min, enumInt.Max))
-// }
-
-// func (visitor *prettyPrinter) VisitAlias(alias Alias) {
-// 	visitor.writeString(alias.Name)
-// 	if _, ok := visitor.aliases[alias.Name]; ok {
-// 		return
-// 	}
-// 	pp := prettyPrinter{aliases: visitor.aliases}
-// 	alias.Schema.Visit(&pp)
-// 	visitor.aliases[alias.Name] = pp.String()
-// }
-
-// func (visitor *prettyPrinter) String() string {
-// 	s1 := stream.FromMap(visitor.aliases)
-// 	s2 := stream.Map(s1, func(kv fun.Pair[string, string]) string {
-// 		// TODO: don't print std:types
-// 		return fmt.Sprintf("%s = %s\n\n", kv.Left, kv.Right)
-// 	})
-// 	s3 := stream.CollectToSlice(s2)
-// 	return strings.Join(s3, "") + visitor.builder.String()
-// }
-
-// func PrettyPrintSchema(t Schema) string {
-// 	tsv := NewPrettyPrinter()
-// 	t.Visit(&tsv)
-// 	return tsv.String()
-// }
+func PrettyPrintSchema(t Schema) string {
+	tsv := NewPrettyPrinter(strings.Builder{})
+	tsv.Write(t)
+	return tsv.String()
+}

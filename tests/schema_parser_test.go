@@ -80,14 +80,12 @@ func TestBttvDB(t *testing.T) {
 	assert.Equal(t, bttvEmotesDBSchema, schema)
 }
 
-// func TestBttvDBPrettyPrinter(t *testing.T) {
-// 	assert.Equal(t, `std:string = []rune
-
-// [](
-//   std:string,
-//   []std:string,
-// )`, sixty.PrettyPrintSchema(bttvEmotesDB))
-// }
+func TestBttvDBPrettyPrinter(t *testing.T) {
+	assert.Equal(t, `[](
+  std:string,
+  []std:string,
+)`, sixty.PrettyPrintSchema(bttvEmotesDBSchema))
+}
 
 func TestEnumInt(t *testing.T) {
 	schema, err := sixty.ParseSchema(`[](0..255)`)
