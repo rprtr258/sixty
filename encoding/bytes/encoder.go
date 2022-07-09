@@ -24,7 +24,8 @@ func (v *Encoder) writeInt(x int) {
 	if x > 0 {
 		v.writeUint(uint(x) * 2)
 	} else {
-		// TODO: fix and test overflow/steal from protobuf
+		// TODO: fix and test overflow
+		// TODO: (x>>31) ^ (x<<1) for x int32
 		v.writeUint(uint(-2*x) - 1)
 	}
 }
