@@ -1,9 +1,11 @@
-package sixty
+package schema
 
 import (
 	"log"
 	"regexp"
 	"strconv"
+
+	sixty "github.com/rprtr258/sixty/pkg"
 )
 
 var TokenRegex = regexp.MustCompile(`(\[|\]|\(|\)|\{|\}|,|\?|\d+|std:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)
@@ -24,7 +26,7 @@ func (r *SchemaReader) Next() (res string) {
 	return
 }
 
-func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []Schema) {
+func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.Schema) {
 	for {
 		res = append(res, r.ParseSchema())
 		nextToken := r.Next()
@@ -34,30 +36,30 @@ func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []Schema
 	}
 }
 
-func (r *SchemaReader) ParseSchema() Schema {
+func (r *SchemaReader) ParseSchema() sixty.Schema {
 	token := r.Next()
 	switch token {
 	case "bit":
-		return Bit{}
+		return sixty.Bit{}
 	case "int":
-		return Int{}
+		return sixty.Int{}
 	case "uint":
-		return Uint{}
+		return sixty.Uint{}
 	case "rune":
-		return Rune{}
+		return sixty.Rune{}
 	case "?":
-		return Optional{Schema: r.ParseSchema()}
+		return sixty.Optional{Schema: r.ParseSchema()}
 	case "[":
 		nextToken := r.Next()
 		if nextToken == "]" {
-			return List{Schema: r.ParseSchema()}
+			return sixty.List{Schema: r.ParseSchema()}
 		} else {
 			arrayLength, err := strconv.Atoi(nextToken)
 			if err != nil {
 				log.Fatalln(err.Error())
 			}
 			r.Next() // TODO: assert "]"
-			return Array{
+			return sixty.Array{
 				Schema: r.ParseSchema(),
 				Count:  uint(arrayLength),
 			}
@@ -71,18 +73,18 @@ func (r *SchemaReader) ParseSchema() Schema {
 			if err != nil {
 				panic(err.Error())
 			}
-			return EnumInt{
+			return sixty.EnumInt{
 				Min: min,
 				Max: max,
 			}
 		}
-		return Product(r.ParseCommaSeparatedSchemas(")"))
+		return sixty.Product(r.ParseCommaSeparatedSchemas(")"))
 	case "{":
-		return Coproduct(r.ParseCommaSeparatedSchemas("}"))
+		return sixty.Coproduct(r.ParseCommaSeparatedSchemas("}"))
 	// TODO: enum
 	// TODO: alias
-	case string(StringKind):
-		return String{}
+	case string(sixty.StringKind):
+		return sixty.String{}
 	default:
 		panic(token)
 	}
@@ -95,12 +97,12 @@ func Tokenize(s string) SchemaReader {
 	}
 }
 
-func ParseSchema(s string) (Schema, error) {
+func ParseSchema(s string) (sixty.Schema, error) {
 	reader := Tokenize(s)
 	return reader.ParseSchema(), nil
 }
 
-func MustParseSchema(s string) Schema {
+func MustParseSchema(s string) sixty.Schema {
 	res, err := ParseSchema(s)
 	if err != nil {
 		panic(err)

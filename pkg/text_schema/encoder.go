@@ -1,8 +1,10 @@
-package sixty
+package schema
 
 import (
 	"fmt"
 	"strings"
+
+	sixty "github.com/rprtr258/sixty/pkg"
 )
 
 type prettyPrinter struct {
@@ -19,32 +21,32 @@ func NewPrettyPrinter(builder strings.Builder) prettyPrinter {
 	}
 }
 
-func (v *prettyPrinter) Write(t Schema) {
+func (v *prettyPrinter) Write(t sixty.Schema) {
 	// TODO: cache idents
 	v.builder.WriteString(strings.Repeat(" ", int(v.ident*2)))
 	switch tt := t.(type) {
-	case String:
-		v.builder.WriteString(string(StringKind))
-	case Bit:
+	case sixty.String:
+		v.builder.WriteString(string(sixty.StringKind))
+	case sixty.Bit:
 		v.builder.WriteString("bit")
-	case Int:
+	case sixty.Int:
 		v.builder.WriteString("int")
-	case Uint:
+	case sixty.Uint:
 		v.builder.WriteString("uint")
-	case Rune:
+	case sixty.Rune:
 		v.builder.WriteString("rune")
-	case Enum:
+	case sixty.Enum:
 		v.builder.WriteRune('{')
 		// TODO: iter while
 		v.builder.WriteString(strings.Join(tt.Values, ", "))
 		v.builder.WriteRune('}')
-	case EnumInt:
+	case sixty.EnumInt:
 		v.builder.WriteRune('(')
 		v.builder.WriteString(fmt.Sprint(tt.Min))
 		v.builder.WriteString("..")
 		v.builder.WriteString(fmt.Sprint(tt.Max))
 		v.builder.WriteRune(')')
-	case Product:
+	case sixty.Product:
 		v.builder.WriteString("(\n")
 		v.ident++
 		for _, field := range tt {
@@ -53,7 +55,7 @@ func (v *prettyPrinter) Write(t Schema) {
 		}
 		v.ident--
 		v.builder.WriteString(")")
-	case Coproduct:
+	case sixty.Coproduct:
 		v.builder.WriteString("{\n")
 		v.ident++
 		for _, variant := range tt {
@@ -62,25 +64,25 @@ func (v *prettyPrinter) Write(t Schema) {
 		}
 		v.ident--
 		v.builder.WriteString("}")
-	case List:
+	case sixty.List:
 		v.builder.WriteString("[]")
 		tmp := v.ident
 		v.ident = 0
 		v.Write(tt.Schema)
 		v.ident = tmp
-	case Array:
+	case sixty.Array:
 		v.builder.WriteString(fmt.Sprintf("[%d]", tt.Count))
 		tmp := v.ident
 		v.ident = 0
 		v.Write(tt.Schema)
 		v.ident = tmp
-	case Optional:
+	case sixty.Optional:
 		v.builder.WriteString("?")
 		tmp := v.ident
 		v.ident = 0
 		v.Write(tt.Schema)
 		v.ident = tmp
-	case Alias:
+	case sixty.Alias:
 		v.builder.WriteString(tt.Name)
 		if _, ok := v.aliases[tt.Name]; ok {
 			return
@@ -102,7 +104,7 @@ func (v *prettyPrinter) String() string {
 	return res.String()
 }
 
-func PrettyPrintSchema(t Schema) string {
+func PrettyPrintSchema(t sixty.Schema) string {
 	tsv := NewPrettyPrinter(strings.Builder{})
 	tsv.Write(t)
 	return tsv.String()

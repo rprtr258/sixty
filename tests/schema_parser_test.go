@@ -10,6 +10,7 @@ import (
 	sixty "github.com/rprtr258/sixty/pkg"
 	sixtyBytes "github.com/rprtr258/sixty/pkg/byte"
 	"github.com/rprtr258/sixty/pkg/json"
+	textSchema "github.com/rprtr258/sixty/pkg/text_schema"
 )
 
 var (
@@ -75,7 +76,7 @@ func TestBttvDBSize(t *testing.T) {
 }
 
 func TestBttvDB(t *testing.T) {
-	schema, err := sixty.ParseSchema(`[](std:string,[]std:string)`)
+	schema, err := textSchema.ParseSchema(`[](std:string,[]std:string)`)
 	assert.NoError(t, err)
 	assert.Equal(t, bttvEmotesDBSchema, schema)
 }
@@ -84,11 +85,11 @@ func TestBttvDBPrettyPrinter(t *testing.T) {
 	assert.Equal(t, `[](
   std:string,
   []std:string,
-)`, sixty.PrettyPrintSchema(bttvEmotesDBSchema))
+)`, textSchema.PrettyPrintSchema(bttvEmotesDBSchema))
 }
 
 func TestEnumInt(t *testing.T) {
-	schema, err := sixty.ParseSchema(`[](0..255)`)
+	schema, err := textSchema.ParseSchema(`[](0..255)`)
 	assert.NoError(t, err)
 	assert.Equal(t, sixty.List{Schema: sixty.EnumInt{
 		Min: 0,
