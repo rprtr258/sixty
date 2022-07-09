@@ -37,7 +37,6 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		e.Buffer.WriteRune('{')
 		for i, x := range vv {
-			// TODO: move out std:types as a separate case
 			if ttt, vvv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](tt[i], vv); ok {
 				e.Buffer.WriteRune('"')
 				e.Buffer.WriteString(ttt.Name)
