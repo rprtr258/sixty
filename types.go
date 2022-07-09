@@ -25,6 +25,7 @@ const (
 	// Datetime
 	//    millis,micros,nanos
 	// []bit
+	// [n]bit
 )
 
 type Schema interface {

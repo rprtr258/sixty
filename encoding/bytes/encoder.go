@@ -7,8 +7,6 @@ import (
 )
 
 // TODO: bit encoder/decoder
-// TODO: byte decoder
-// TODO: compress list/array of bits
 // TODO: streaming encoder/decoder, with size of element for lists (if it is not known)
 type Encoder struct {
 	// TODO: make unexported
