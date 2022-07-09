@@ -7,18 +7,16 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-// TODO: bit encoder/decoder
 // TODO: streaming encoder/decoder, with size of element for lists (if it is not known)
 type Encoder struct {
-	// TODO: make unexported
-	Buffer sixty.Writer
+	buffer     sixty.Writer
+	uintBuffer []byte
 }
 
 func (v *Encoder) writeUint(x uint64) {
-	buf := make([]byte, 4)
-	n := binary.PutUvarint(buf, x)
+	n := binary.PutUvarint(v.uintBuffer, x)
 	for i := 0; i < n; i++ {
-		v.Buffer.WriteByte(buf[i])
+		v.buffer.WriteByte(v.uintBuffer[i])
 	}
 }
 func (v *Encoder) writeInt(x int64) {
@@ -29,19 +27,19 @@ func (v *Encoder) writeInt(x int64) {
 func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
 		e.writeUint(uint64(len(vv)))
-		e.Buffer.WriteString(string(vv))
+		e.buffer.WriteString(string(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Bit, sixty.BitValue](t, v); ok {
 		if vv {
-			e.Buffer.WriteByte(1)
+			e.buffer.WriteByte(1)
 		} else {
-			e.Buffer.WriteByte(0)
+			e.buffer.WriteByte(0)
 		}
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Int, sixty.IntValue](t, v); ok {
 		e.writeInt(int64(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Uint, sixty.UintValue](t, v); ok {
 		e.writeUint(uint64(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Rune, sixty.RuneValue](t, v); ok {
-		e.Buffer.WriteRune(rune(vv))
+		e.buffer.WriteRune(rune(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Enum, sixty.EnumValue](t, v); ok {
 		e.writeUint(uint64(vv))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.EnumInt, sixty.EnumIntValue](t, v); ok {
@@ -78,7 +76,10 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 
 func Encode(t sixty.Schema, v sixty.SchemaValue) ([]byte, error) {
 	var buffer bytes.Buffer
-	encoder := Encoder{Buffer: sixty.NewWriter(&buffer)}
+	encoder := Encoder{
+		buffer:     sixty.NewWriter(&buffer),
+		uintBuffer: make([]byte, 10),
+	}
 	encoder.Write(t, v)
-	return buffer.Bytes(), encoder.Buffer.Error
+	return buffer.Bytes(), encoder.buffer.Error
 }

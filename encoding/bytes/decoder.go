@@ -7,16 +7,13 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-// TODO: bit encoder/decoder
-// TODO: byte decoder
 type Decoder struct {
-	// TODO: make private
-	Buffer sixty.Reader
+	buffer sixty.Reader
 }
 
 func (e *Decoder) readUint() uint64 {
 	// TODO: implement
-	b := e.Buffer.ReadByte()
+	b := e.buffer.ReadByte()
 	switch {
 	case b < 128:
 		return uint64(b)
@@ -36,7 +33,7 @@ func (e *Decoder) readInt() int64 {
 
 // TODO: error
 func (e *Decoder) appendError(format string, args ...any) {
-	panic(fmt.Sprintf("error at position %d: ", e.Buffer.Pos()) + fmt.Sprintf(format, args...))
+	panic(fmt.Sprintf("error at position %d: ", e.buffer.Pos()) + fmt.Sprintf(format, args...))
 }
 
 // TODO: change to read into pointer?
@@ -47,11 +44,11 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		sb := bytes.Buffer{}
 		sb.Grow(int(stringLength))
 		for i := uint64(0); i < stringLength; i++ {
-			sb.WriteRune(e.Buffer.ReadRune())
+			sb.WriteRune(e.buffer.ReadRune())
 		}
 		return sixty.StringValue(sb.String())
 	case sixty.Bit:
-		b := e.Buffer.ReadByte()
+		b := e.buffer.ReadByte()
 		switch b {
 		case 0:
 			return sixty.BitValue(false)
@@ -65,7 +62,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	case sixty.Uint:
 		return sixty.UintValue(e.readUint())
 	case sixty.Rune:
-		r := e.Buffer.ReadRune()
+		r := e.buffer.ReadRune()
 		return sixty.RuneValue(r)
 	case sixty.Enum:
 		n := e.readUint()
@@ -102,7 +99,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		}
 		return sixty.ArrayValue(res)
 	case sixty.Optional:
-		isPresent := e.Buffer.ReadByte()
+		isPresent := e.buffer.ReadByte()
 		switch isPresent {
 		case 0:
 			return sixty.OptionalValue{IsValid: false}
@@ -127,7 +124,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 
 func Decode(t sixty.Schema, data []byte) (sixty.SchemaValue, error) {
 	buffer := bytes.NewBuffer(data)
-	decoder := Decoder{Buffer: sixty.NewReader(buffer)}
+	decoder := Decoder{buffer: sixty.NewReader(buffer)}
 	res := decoder.Read(t)
-	return res, decoder.Buffer.Error
+	return res, decoder.buffer.Error
 }
