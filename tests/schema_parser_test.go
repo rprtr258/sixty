@@ -1,7 +1,6 @@
 package sixty_test
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,20 +53,17 @@ func stringToString(s string) sixty.SchemaValue {
 }
 
 func TestBttvDBJsonEncoder(t *testing.T) {
-	buffer := bytes.Buffer{}
-	(&sixtyJson.Encoder{Buffer: &buffer}).Write(bttvEmotesDBSchema, bttvEmotesDBData)
-	assert.Equal(t, bttvEmotesDBJson, buffer.String())
+	got := sixtyJson.Encode(bttvEmotesDBSchema, bttvEmotesDBData)
+	assert.Equal(t, bttvEmotesDBJson, got)
 }
 
 func TestBttvDBByteEncoder(t *testing.T) {
-	buffer := bytes.Buffer{}
-	(&sixtyBytes.Encoder{Buffer: &buffer}).Write(bttvEmotesDBSchema, bttvEmotesDBData)
-	assert.Equal(t, bttvEmotesDBBytes, buffer.Bytes())
+	got := sixtyBytes.Encode(bttvEmotesDBSchema, bttvEmotesDBData)
+	assert.Equal(t, bttvEmotesDBBytes, got)
 }
 
 func TestBttvDBByteDecoder(t *testing.T) {
-	buffer := bytes.NewBuffer(bttvEmotesDBBytes)
-	got := (&sixtyBytes.Decoder{Buffer: buffer}).Read(bttvEmotesDBSchema)
+	got := sixtyBytes.Decode(bttvEmotesDBSchema, bttvEmotesDBBytes)
 	assert.Equal(t, bttvEmotesDBData, got)
 }
 

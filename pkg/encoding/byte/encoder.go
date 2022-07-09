@@ -1,6 +1,8 @@
 package bytes
 
 import (
+	"bytes"
+
 	sixty "github.com/rprtr258/sixty/pkg"
 )
 
@@ -81,4 +83,10 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	} else {
 		panic("something unimplemented")
 	}
+}
+
+func Encode(t sixty.Schema, v sixty.SchemaValue) []byte {
+	var buffer bytes.Buffer
+	(&Encoder{Buffer: &buffer}).Write(t, v)
+	return buffer.Bytes()
 }

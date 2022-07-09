@@ -91,3 +91,9 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		panic("something unimplemented")
 	}
 }
+
+func Encode(t sixty.Schema, v sixty.SchemaValue) string {
+	buffer := bytes.Buffer{}
+	(&Encoder{Buffer: &buffer}).Write(t, v)
+	return buffer.String()
+}

@@ -1,6 +1,7 @@
 package bytes
 
 import (
+	"bytes"
 	"fmt"
 
 	sixty "github.com/rprtr258/sixty/pkg"
@@ -123,4 +124,9 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	default:
 		panic("something unimplemented")
 	}
+}
+
+func Decode(t sixty.Schema, data []byte) sixty.SchemaValue {
+	buffer := bytes.NewBuffer(data)
+	return (&Decoder{Buffer: buffer}).Read(t)
 }
