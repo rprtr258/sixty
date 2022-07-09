@@ -2,7 +2,6 @@ package sixty
 
 import (
 	"io"
-	"log"
 	"unicode/utf8"
 )
 
@@ -17,7 +16,6 @@ type Reader struct {
 	Error  error
 }
 
-// TODO: test NewReader(bytes.NewStringBuffer(""))
 func NewReaderBufferSize(r io.Reader, bufferSize int) Reader {
 	return Reader{
 		reader: r,
@@ -35,7 +33,6 @@ func NewReader(r io.Reader) Reader {
 func (r *Reader) loadMore() bool {
 	for {
 		n, err := r.reader.Read(r.buffer)
-		log.Println(n, err)
 		if n != 0 {
 			r.start = 0
 			r.end = n
@@ -45,7 +42,9 @@ func (r *Reader) loadMore() bool {
 			return true
 		}
 		if err != nil {
-			r.Error = err
+			if err != io.EOF {
+				r.Error = err
+			}
 			return false
 		}
 	}
