@@ -57,7 +57,6 @@ func (r *SchemaReader) skip(expected string) {
 	}
 }
 
-// TODO: trailing comma
 func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.Schema) {
 	for {
 		if r.Error != nil {
@@ -67,7 +66,13 @@ func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.
 		nextToken := r.shift()
 		if nextToken == endToken {
 			return
-		} else if nextToken != "," {
+		} else if nextToken == "," {
+			maybeEnd := r.shift()
+			if maybeEnd == endToken {
+				return
+			}
+			r.unshift()
+		} else {
 			r.appendError("expected ',' but found %q", nextToken)
 			r.unshift()
 		}

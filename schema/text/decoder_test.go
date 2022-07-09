@@ -50,3 +50,18 @@ func TestDecode_Everything(t *testing.T) {
 		}},
 	)
 }
+
+func TestDecode_NoEndComma(t *testing.T) {
+	assertSchema(t, `(int,int)`, sixty.Product{sixty.Int{}, sixty.Int{}})
+}
+
+func TestDecode_EndComma(t *testing.T) {
+	assertSchema(t, `(int,int,)`, sixty.Product{sixty.Int{}, sixty.Int{}})
+}
+
+func TestDecode_Spaces(t *testing.T) {
+	assertSchema(t, `(
+  int,
+  int,
+)`, sixty.Product{sixty.Int{}, sixty.Int{}})
+}
