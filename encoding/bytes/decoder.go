@@ -17,7 +17,6 @@ type Decoder struct {
 
 func (e *Decoder) readUint() uint64 {
 	// TODO: implement
-	// TODO: error handling
 	b := e.Buffer.ReadByte()
 	switch {
 	case b < 128:
