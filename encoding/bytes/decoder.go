@@ -18,24 +18,24 @@ type Decoder struct {
 	}
 }
 
-func (e *Decoder) readUint() uint {
+func (e *Decoder) readUint() uint64 {
 	// TODO: implement
 	// TODO: error handling
 	b, _ := e.Buffer.ReadByte()
 	switch {
 	case b < 128:
-		return uint(b)
+		return uint64(b)
 	}
 	panic("not implemented")
 }
 
 // TODO: fix overflow
-func (e *Decoder) readInt() int {
+func (e *Decoder) readInt() int64 {
 	zigZag := e.readUint()
 	if zigZag%2 == 0 {
-		return int(zigZag / 2)
+		return int64(zigZag / 2)
 	} else {
-		return int(zigZag)/(-2) - 1
+		return int64(zigZag)/(-2) - 1
 	}
 }
 
@@ -45,7 +45,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	case sixty.String:
 		stringLength := e.readUint()
 		s := make([]rune, 0, stringLength)
-		for i := uint(0); i < stringLength; i++ {
+		for i := uint64(0); i < stringLength; i++ {
 			// TODO: rewrite
 			r, _, _ := e.Buffer.ReadRune()
 			s = append(s, r)
@@ -71,7 +71,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		return sixty.RuneValue(r)
 	case sixty.Enum:
 		n := e.readUint()
-		if n < uint(len(tt.Values)) {
+		if n < uint64(len(tt.Values)) {
 			return sixty.EnumValue(n)
 		}
 		panic(fmt.Sprintf("found %d'th enum value while there are only %d of them", n, len(tt.Values)))
@@ -88,12 +88,12 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		variant := e.readUint()
 		return sixty.CoproductValue{
 			SchemaValue: e.Read(tt[variant]),
-			Variant:     variant,
+			Variant:     uint(variant),
 		}
 	case sixty.List:
 		listLen := e.readUint()
 		res := make([]sixty.SchemaValue, 0, listLen)
-		for i := uint(0); i < listLen; i++ {
+		for i := uint64(0); i < listLen; i++ {
 			res = append(res, e.Read(tt.Schema))
 		}
 		return sixty.ListValue(res)

@@ -37,7 +37,6 @@ type PredefSchema interface {
 	// TODO: get value?
 }
 
-// TODO: is needed?
 type SchemaValue interface {
 	isSchemaValue()
 	Kind() Kind
@@ -56,7 +55,7 @@ type Int struct{}
 
 func (Int) Kind() Kind { return IntKind }
 
-type IntValue int
+type IntValue int64
 
 func (IntValue) isSchemaValue() {}
 func (IntValue) Kind() Kind     { return IntKind }
@@ -65,7 +64,7 @@ type Uint struct{}
 
 func (Uint) Kind() Kind { return UintKind }
 
-type UintValue uint
+type UintValue uint64
 
 func (UintValue) isSchemaValue() {}
 func (UintValue) Kind() Kind     { return UintKind }
