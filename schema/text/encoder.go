@@ -1,7 +1,7 @@
 package text
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/rprtr258/sixty"
@@ -59,9 +59,9 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.builder.WriteRune('}')
 	case sixty.EnumInt:
 		e.builder.WriteRune('(')
-		e.builder.WriteString(fmt.Sprint(tt.Min))
+		e.builder.WriteString(strconv.Itoa(tt.Min))
 		e.builder.WriteString("..")
-		e.builder.WriteString(fmt.Sprint(tt.Max))
+		e.builder.WriteString(strconv.Itoa(tt.Max))
 		e.builder.WriteRune(')')
 	case sixty.Product:
 		e.builder.WriteRune('(')
@@ -107,7 +107,7 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.identSize = tmp
 	case sixty.Array:
 		e.builder.WriteRune('[')
-		e.builder.WriteString(fmt.Sprint(tt.Count))
+		e.builder.WriteString(strconv.FormatUint(uint64(tt.Count), 10))
 		e.builder.WriteRune(']')
 		tmp := e.identSize
 		e.identSize = 0

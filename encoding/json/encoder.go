@@ -2,7 +2,7 @@ package json
 
 import (
 	"bytes"
-	"fmt"
+	"strconv"
 
 	"github.com/rprtr258/sixty"
 )
@@ -23,10 +23,9 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 			e.Buffer.WriteString("false")
 		}
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Int, sixty.IntValue](t, v); ok {
-		// TODO: change to strconv
-		e.Buffer.WriteString(fmt.Sprint(vv))
+		e.Buffer.WriteString(strconv.FormatInt(int64(vv), 10))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Uint, sixty.UintValue](t, v); ok {
-		e.Buffer.WriteString(fmt.Sprint(vv))
+		e.Buffer.WriteString(strconv.FormatUint(uint64(vv), 10))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Rune, sixty.RuneValue](t, v); ok {
 		e.Buffer.WriteRune('"')
 		e.Buffer.WriteRune(rune(vv))
@@ -34,7 +33,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Enum, sixty.EnumValue](t, v); ok {
 		e.Buffer.WriteString(tt.Values[vv])
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.EnumInt, sixty.EnumIntValue](t, v); ok {
-		e.Buffer.WriteString(fmt.Sprint(vv))
+		e.Buffer.WriteString(strconv.FormatInt(int64(vv), 10))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		e.Buffer.WriteRune('{')
 		for i, x := range vv {
@@ -45,7 +44,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 				e.Write(ttt.Schema, vvv.Value)
 			} else {
 				e.Buffer.WriteRune('"')
-				e.Buffer.WriteString(fmt.Sprint(i))
+				e.Buffer.WriteString(strconv.FormatInt(int64(i), 10))
 				e.Buffer.WriteString(`":`)
 				e.Write(tt[i], x)
 			}
@@ -56,7 +55,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.Buffer.WriteRune('}')
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
 		e.Buffer.WriteString(`{"`)
-		e.Buffer.WriteString(fmt.Sprint(vv.Variant))
+		e.Buffer.WriteString(strconv.FormatUint(uint64(vv.Variant), 10))
 		e.Buffer.WriteString(`":`)
 		e.Write(tt[vv.Variant], vv.SchemaValue)
 		e.Buffer.WriteRune('}')
