@@ -1,6 +1,6 @@
-package tests
+package internal
 
-import sixty "github.com/rprtr258/sixty/pkg"
+import "github.com/rprtr258/sixty"
 
 // TODO: funcs to encode some primitive/logical types
 

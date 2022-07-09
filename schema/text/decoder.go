@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
-	sixty "github.com/rprtr258/sixty/pkg"
+	"github.com/rprtr258/sixty"
 )
 
 var TokenRegex = regexp.MustCompile(`(\[|\]|\(|\)|\{|\}|,|\?|\d+|std:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)

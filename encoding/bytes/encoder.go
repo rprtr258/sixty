@@ -3,7 +3,7 @@ package bytes
 import (
 	"bytes"
 
-	sixty "github.com/rprtr258/sixty/pkg"
+	"github.com/rprtr258/sixty"
 )
 
 // TODO: bit encoder/decoder

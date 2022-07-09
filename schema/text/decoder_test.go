@@ -5,17 +5,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	// TODO: move everything to root
-
-	sixty "github.com/rprtr258/sixty/pkg"
-	text "github.com/rprtr258/sixty/pkg/schema/text"
-	"github.com/rprtr258/sixty/tests"
+	"github.com/rprtr258/sixty"
+	"github.com/rprtr258/sixty/internal"
+	"github.com/rprtr258/sixty/schema/text"
 )
 
 func TestBttvDBDecode(t *testing.T) {
 	schema, err := text.ParseSchema(`[](std:string,[]std:string)`)
 	assert.NoError(t, err)
-	assert.Equal(t, tests.BttvEmotesDBSchema, schema)
+	assert.Equal(t, internal.BttvEmotesDBSchema, schema)
 }
 
 func TestEnumIntDecode(t *testing.T) {

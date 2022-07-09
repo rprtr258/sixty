@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	sixty "github.com/rprtr258/sixty/pkg"
+	"github.com/rprtr258/sixty"
 )
 
 type prettyPrinter struct {

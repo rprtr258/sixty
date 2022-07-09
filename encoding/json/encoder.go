@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	sixty "github.com/rprtr258/sixty/pkg"
+	"github.com/rprtr258/sixty"
 )
 
 type Encoder struct {
