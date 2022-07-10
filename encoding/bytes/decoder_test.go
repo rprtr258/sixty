@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	bytes "github.com/rprtr258/sixty/encoding/bytes"
+	"github.com/rprtr258/sixty/encoding/bytes"
 	"github.com/rprtr258/sixty/internal"
 )
 
