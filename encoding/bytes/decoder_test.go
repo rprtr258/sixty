@@ -5,18 +5,19 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/rprtr258/sixty"
 	"github.com/rprtr258/sixty/encoding/bytes"
 	"github.com/rprtr258/sixty/internal"
 )
 
-type entry struct {
-	Emote string
-	Ids   []string
-}
+func TestDecode_BttvDB(t *testing.T) {
+	type entry struct {
+		Emote string
+		Ids   []string
+	}
 
-type BttvEmotesDB []entry
+	type BttvEmotesDB []entry
 
-func TestBttvDBDecode(t *testing.T) {
 	var got BttvEmotesDB
 	err := bytes.Decode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBBytes, &got)
 	assert.NoError(t, err)
@@ -30,4 +31,15 @@ func TestBttvDBDecode(t *testing.T) {
 		}}),
 		got,
 	)
+}
+
+func TestDecode_Coproduct(t *testing.T) {
+	type s interface{}
+	var got s
+	err := bytes.Decode(sixty.Coproduct{
+		sixty.Int{},
+		sixty.String{},
+	}, []byte{0x00, 0b01010100}, &got)
+	assert.NoError(t, err)
+	assert.Equal(t, s(int64(42)), got)
 }

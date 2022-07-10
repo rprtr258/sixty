@@ -53,6 +53,8 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 		}
 	} else if _, _, ok := sixty.AssertSchemas[sixty.Int, int64](t, rv); ok {
 		rv.SetInt(e.readInt())
+	} else if _, _, ok := sixty.AssertSchemas[sixty.Int, any](t, rv); ok {
+		rv.Set(reflect.ValueOf(e.readInt()))
 	} else if _, _, ok := sixty.AssertSchemas[sixty.Uint, uint64](t, rv); ok {
 		rv.SetUint(e.readUint())
 	} else if _, _, ok := sixty.AssertSchemas[sixty.Rune, rune](t, rv); ok {
@@ -71,12 +73,9 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 		for i, x := range tt {
 			e.Read(x, rv.Field(i))
 		}
-		// case sixty.Coproduct:
-		// 	variant := e.readUint()
-		// 	return sixty.CoproductValue{
-		// 		SchemaValue: e.Read(tt[variant]),
-		// 		Variant:     uint(variant),
-		// 	}
+	} else if tt, ok := t.(sixty.Coproduct); ok && rv.Kind() == reflect.Interface {
+		variant := e.readUint()
+		e.Read(tt[variant], rv)
 	} else if tt, ok := t.(sixty.List); ok && rv.Kind() == reflect.Slice {
 		listLen := int(e.readUint())
 		lst := reflect.MakeSlice(rv.Type(), listLen, listLen)
