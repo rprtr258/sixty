@@ -9,8 +9,25 @@ import (
 	"github.com/rprtr258/sixty/internal"
 )
 
+type entry struct {
+	Emote string
+	Ids   []string
+}
+
+type BttvEmotesDB []entry
+
 func TestBttvDBDecode(t *testing.T) {
-	got, err := bytes.Decode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBBytes)
+	var got BttvEmotesDB
+	err := bytes.Decode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBBytes, &got)
 	assert.NoError(t, err)
-	assert.Equal(t, internal.BttvEmotesDBData, got)
+	assert.Equal(t,
+		BttvEmotesDB([]entry{{
+			Emote: "Kappa",
+			Ids:   []string{"KappaOwner1", "KappaOwner2"},
+		}, {
+			Emote: "PogChamp",
+			Ids:   []string{"PogChampOwner1", "PogChampOwner2"},
+		}}),
+		got,
+	)
 }

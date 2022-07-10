@@ -2,7 +2,7 @@ package sixty
 
 // TODO: move to internal / package
 
-func AssertSchemas[S Schema, V SchemaValue](t Schema, v SchemaValue) (tt S, vv V, ok bool) {
+func AssertSchemas[S Schema, V any](t Schema, v any) (tt S, vv V, ok bool) {
 	tt, okSchema := t.(S)
 	vv, okValue := v.(V)
 	ok = okSchema && okValue

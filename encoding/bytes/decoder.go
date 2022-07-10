@@ -3,6 +3,7 @@ package bytes
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 
 	"github.com/rprtr258/sixty"
 )
@@ -31,94 +32,91 @@ func (e *Decoder) appendError(format string, args ...any) {
 }
 
 // TODO: out arg
-func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
-	switch tt := t.(type) {
-	case sixty.String:
+func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
+	if _, ok := t.(sixty.String); ok && rv.Kind() == reflect.String {
 		stringLength := e.readUint()
 		sb := bytes.Buffer{}
 		sb.Grow(int(stringLength))
 		for i := uint64(0); i < stringLength; i++ {
 			sb.WriteRune(e.buffer.ReadRune())
 		}
-		return sixty.StringValue(sb.String())
-	case sixty.Bit:
+		rv.Set(reflect.ValueOf(sb.String()))
+	} else if _, _, ok := sixty.AssertSchemas[sixty.Bit, bool](t, rv); ok {
 		b := e.buffer.ReadByte()
 		switch b {
 		case 0:
-			return sixty.BitValue(false)
+			rv.SetBool(false)
 		case 1:
-			return sixty.BitValue(true)
+			rv.SetBool(true)
 		default:
 			e.appendError("expected bit which is either 0 or 1, found: %d", b)
 		}
-	case sixty.Int:
-		return sixty.IntValue(e.readInt())
-	case sixty.Uint:
-		return sixty.UintValue(e.readUint())
-	case sixty.Rune:
-		r := e.buffer.ReadRune()
-		return sixty.RuneValue(r)
-	case sixty.Enum:
+	} else if _, _, ok := sixty.AssertSchemas[sixty.Int, int64](t, rv); ok {
+		rv.SetInt(e.readInt())
+	} else if _, _, ok := sixty.AssertSchemas[sixty.Uint, uint64](t, rv); ok {
+		rv.SetUint(e.readUint())
+	} else if _, _, ok := sixty.AssertSchemas[sixty.Rune, rune](t, rv); ok {
+		rv.Set(reflect.ValueOf(e.buffer.ReadRune()))
+	} else if tt, _, ok := sixty.AssertSchemas[sixty.Enum, uint](t, rv); ok {
 		n := e.readUint()
 		if n < uint64(len(tt.Values)) {
-			return sixty.EnumValue(n)
+			rv.SetUint(n)
+			return
 		}
 		e.appendError("found %d'th enum value while there are only %d of them", n, len(tt.Values))
-	case sixty.EnumInt:
+	} else if tt, _, ok := sixty.AssertSchemas[sixty.EnumInt, int64](t, rv); ok {
 		n := e.readUint()
-		return sixty.EnumIntValue(int64(n) + tt.Min)
-	case sixty.Product:
-		res := make([]sixty.SchemaValue, 0, len(tt))
-		for _, x := range tt {
-			res = append(res, e.Read(x))
+		rv.SetInt(int64(n) + tt.Min)
+	} else if tt, ok := t.(sixty.Product); ok && rv.Kind() == reflect.Struct {
+		for i, x := range tt {
+			e.Read(x, rv.Field(i))
 		}
-		return sixty.ProductValue(res)
-	case sixty.Coproduct:
-		variant := e.readUint()
-		return sixty.CoproductValue{
-			SchemaValue: e.Read(tt[variant]),
-			Variant:     uint(variant),
+		// case sixty.Coproduct:
+		// 	variant := e.readUint()
+		// 	return sixty.CoproductValue{
+		// 		SchemaValue: e.Read(tt[variant]),
+		// 		Variant:     uint(variant),
+		// 	}
+	} else if tt, ok := t.(sixty.List); ok && rv.Kind() == reflect.Slice {
+		listLen := int(e.readUint())
+		lst := reflect.MakeSlice(rv.Type(), listLen, listLen)
+		for i := 0; i < listLen; i++ {
+			e.Read(tt.Schema, lst.Index(i))
 		}
-	case sixty.List:
-		listLen := e.readUint()
-		res := make([]sixty.SchemaValue, 0, listLen)
-		for i := uint64(0); i < listLen; i++ {
-			res = append(res, e.Read(tt.Schema))
-		}
-		return sixty.ListValue(res)
-	case sixty.Array:
-		res := make([]sixty.SchemaValue, 0, tt.Count)
-		for i := uint(0); i < tt.Count; i++ {
-			res = append(res, e.Read(tt.Schema))
-		}
-		return sixty.ArrayValue(res)
-	case sixty.Optional:
-		isPresent := e.buffer.ReadByte()
-		switch isPresent {
-		case 0:
-			return sixty.OptionalValue{IsValid: false}
-		case 1:
-			return sixty.OptionalValue{
-				SchemaValue: e.Read(tt.Schema),
-				IsValid:     false,
-			}
-		default:
-			e.appendError("option variant must be either 0 or 1, but it is %d", isPresent)
-		}
-	case sixty.Alias:
-		return sixty.AliasValue{
-			Name:  tt.Name,
-			Value: e.Read(tt.Schema),
-		}
-	default:
-		panic("something unimplemented")
+		rv.Set(lst)
+		// case sixty.Array:
+		// 	res := make([]sixty.SchemaValue, 0, tt.Count)
+		// 	for i := uint(0); i < tt.Count; i++ {
+		// 		res = append(res, e.Read(tt.Schema))
+		// 	}
+		// 	return sixty.ArrayValue(res)
+		// case sixty.Optional:
+		// 	isPresent := e.buffer.ReadByte()
+		// 	switch isPresent {
+		// 	case 0:
+		// 		return sixty.OptionalValue{IsValid: false}
+		// 	case 1:
+		// 		return sixty.OptionalValue{
+		// 			SchemaValue: e.Read(tt.Schema),
+		// 			IsValid:     false,
+		// 		}
+		// 	default:
+		// 		e.appendError("option variant must be either 0 or 1, but it is %d", isPresent)
+		// 	}
+		// case sixty.Alias:
+		// 	return sixty.AliasValue{
+		// 		Name:  tt.Name,
+		// 		Value: e.Read(tt.Schema),
+		// 	}
+		// default:
+		// 	panic("something unimplemented")
+		// }
 	}
-	return nil
 }
 
-func Decode(t sixty.Schema, data []byte) (sixty.SchemaValue, error) {
+func Decode(t sixty.Schema, data []byte, v any) error {
 	buffer := bytes.NewBuffer(data)
 	decoder := Decoder{buffer: sixty.NewReader(buffer)}
-	res := decoder.Read(t)
-	return res, decoder.buffer.Error
+	decoder.Read(t, reflect.ValueOf(v).Elem())
+	return decoder.buffer.Error
 }
