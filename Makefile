@@ -3,3 +3,5 @@ test:
 
 todo:
 	rg 'TODO' --glob '**/*.go'
+
+# TODO: add linter
