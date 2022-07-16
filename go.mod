@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/icza/bitio v1.1.0
-	github.com/rprtr258/go-flow v0.0.2
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/multierr v1.8.0
 )
