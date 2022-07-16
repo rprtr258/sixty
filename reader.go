@@ -1,28 +1,31 @@
 package sixty
 
 import (
+	"fmt"
 	"io"
-	"unicode/utf8"
 )
 
 const defaultBufferSize = 1 << 10
 
 type Reader struct {
+	// reader - underlying raw reader
 	reader io.Reader
+	// buffer - buffer for data
 	buffer []byte
-	start  int
-	end    int
-	pos    uint
-	Error  error
+	// start - first position of data in buffer
+	start int
+	// end - last position of data in buffer plus one
+	end int
+	// pos - count of bytes scanned
+	pos uint
+	// Error - first error occured
+	Error error
 }
 
-func NewReaderBufferSize(r io.Reader, bufferSize int) Reader {
+func NewReaderBufferSize(reader io.Reader, bufferSize uint) Reader {
 	return Reader{
-		reader: r,
+		reader: reader,
 		buffer: make([]byte, bufferSize),
-		Error:  nil,
-		start:  0,
-		end:    0,
 	}
 }
 
@@ -30,21 +33,25 @@ func NewReader(r io.Reader) Reader {
 	return NewReaderBufferSize(r, defaultBufferSize)
 }
 
+// loadMore - read data from inner reader and update buffer, returns true if some data was read
 func (r *Reader) loadMore() bool {
+	if r.start != r.end {
+		return true
+	}
+	if r.Error != nil {
+		return false
+	}
 	for {
 		n, err := r.reader.Read(r.buffer)
-		if n != 0 {
+		if err != io.EOF {
+			r.Error = err
+		}
+		if n > 0 {
 			r.start = 0
 			r.end = n
-			if err != nil {
-				r.Error = err
-			}
 			return true
 		}
-		if err != nil {
-			if err != io.EOF {
-				r.Error = err
-			}
+		if r.Error != nil || err == io.EOF {
 			return false
 		}
 	}
@@ -55,14 +62,8 @@ func (r *Reader) Pos() uint {
 }
 
 func (r *Reader) ReadByte() (b byte) {
-	if r.Error != nil {
+	if r.Error != nil || !r.loadMore() {
 		return
-	}
-	if r.start == r.end {
-		r.loadMore()
-		if r.Error != nil {
-			return
-		}
 	}
 	b = r.buffer[r.start]
 	r.start++
@@ -71,18 +72,59 @@ func (r *Reader) ReadByte() (b byte) {
 }
 
 func (r *Reader) ReadRune() (u rune) {
-	if r.Error != nil {
+	const maskx = 0x3F
+	b0 := r.ReadByte()
+	switch leadingOnes(b0) {
+	case 0:
+		return rune(b0)
+	case 1:
+		b1 := r.ReadByte()
+		return rune(b0&0x3F)<<6 | rune(b1&maskx)
+	case 2:
+		b1 := r.ReadByte()
+		b2 := r.ReadByte()
+		return rune(b0&0x1F)<<12 | rune(b1&maskx)<<6 | rune(b2&maskx)
+	case 3:
+		b1 := r.ReadByte()
+		b2 := r.ReadByte()
+		b3 := r.ReadByte()
+		return rune(b0&0x0F)<<18 | rune(b1&maskx)<<12 | rune(b2&maskx)<<6 | rune(b3&maskx)
+	default:
+		if r.Error == nil {
+			r.Error = fmt.Errorf("TOO LONG RUNE at %d", r.pos)
+		}
 		return
 	}
-	if r.start == r.end {
-		if !r.loadMore() {
+}
+
+func (r *Reader) ReadString() string {
+	resLen := r.ReadUint64()
+	runes := make([]rune, 0, resLen)
+	for i := uint64(0); i < resLen; i++ {
+		runes = append(runes, r.ReadRune())
+	}
+	return string(runes)
+}
+
+func (r *Reader) ReadUint64() (u uint64) {
+	i := 0
+	for {
+		b := r.ReadByte()
+		u |= uint64(b&0x7F) << (7 * i)
+		if b&0x80 == 0 {
 			return
 		}
+		i++
 	}
-	// TODO: rune is not in buffer, or just implement decode rune myself using ReadByte
-	u, n := utf8.DecodeRune(r.buffer[r.start:])
-	// TODO: error reading rune
-	r.start += n
-	r.pos += uint(n)
+}
+
+func (r *Reader) ReadInt64() int64 {
+	return FromZigZag(r.ReadUint64())
+}
+
+func leadingOnes(x byte) (res uint) {
+	for ; x&0x80 != 0; x <<= 1 {
+		res++
+	}
 	return
 }

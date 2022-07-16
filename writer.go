@@ -29,6 +29,16 @@ func (w *Writer) WriteByte(b byte) {
 	}
 }
 
+func (w *Writer) WriteRune(r rune) {
+	if w.Error != nil {
+		return
+	}
+	n := utf8.EncodeRune(w.runeBuffer, r)
+	if _, err := w.writer.Write(w.runeBuffer[:n]); err != nil {
+		w.Error = err
+	}
+}
+
 func (w *Writer) WriteString(s string) {
 	if w.Error != nil {
 		return
@@ -38,12 +48,14 @@ func (w *Writer) WriteString(s string) {
 	}
 }
 
-func (w *Writer) WriteRune(r rune) {
-	if w.Error != nil {
-		return
+func (w *Writer) WriteUint64(x uint64) {
+	for x > 0x7F {
+		w.WriteByte(byte(x&0x7F) | 0x80)
+		x >>= 7
 	}
-	n := utf8.EncodeRune(w.runeBuffer, r)
-	if _, err := w.writer.Write(w.runeBuffer[:n]); err != nil {
-		w.Error = err
-	}
+	w.WriteByte(byte(x))
+}
+
+func (w *Writer) WriteInt64(x int64) {
+	w.WriteUint64(ToZigZag(x))
 }
