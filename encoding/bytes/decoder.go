@@ -3,7 +3,6 @@ package bytes
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"reflect"
 
 	"github.com/rprtr258/sixty"
@@ -21,13 +20,7 @@ func (e *Decoder) appendError(format string, args ...any) {
 // TODO: out arg
 func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 	if _, ok := t.(sixty.String); ok && rv.Kind() == reflect.String {
-		stringLength := e.reader.ReadUint64()
-		sb := bytes.Buffer{}
-		sb.Grow(int(stringLength))
-		for i := uint64(0); i < stringLength; i++ {
-			sb.WriteRune(e.reader.ReadRune())
-		}
-		rv.Set(reflect.ValueOf(sb.String()))
+		rv.Set(reflect.ValueOf(e.reader.ReadLengthString()))
 	} else if _, _, ok := sixty.AssertSchemas[sixty.Bit, bool](t, rv); ok {
 		b := e.reader.ReadByte()
 		switch b {
@@ -64,26 +57,7 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 		variant := e.reader.ReadUint64()
 		e.Read(tt[variant], rv)
 	} else if tt, ok := t.(sixty.List); ok && rv.Kind() == reflect.Slice {
-		log.Println("=============")
-		log.Println("=============")
-		log.Println("=============")
-		log.Println("=============")
-		log.Println("=============")
-		log.Println("=============")
-		log.Println("=============")
-		log.Println("=============")
-		log.Println("=============")
 		listLen := int(e.reader.ReadUint64())
-		log.Println(listLen)
-		log.Println(listLen)
-		log.Println(listLen)
-		log.Println(listLen)
-		log.Println(listLen)
-		log.Println(listLen)
-		log.Println(listLen)
-		log.Println(listLen)
-		log.Println(listLen)
-		log.Println(listLen)
 		lst := reflect.MakeSlice(rv.Type(), listLen, listLen)
 		for i := 0; i < listLen; i++ {
 			e.Read(tt.Schema, lst.Index(i))

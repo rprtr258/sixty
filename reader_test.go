@@ -23,6 +23,6 @@ func TestNewReaderBufferSize_Empty(t *testing.T) {
 
 func Test_ReadString(t *testing.T) {
 	reader := sixty.NewReader(bytes.NewBuffer([]byte{0x03, 0x41, 0x42, 0x43}))
-	assert.Equal(t, "ABC", reader.ReadString())
+	assert.Equal(t, "ABC", reader.ReadLengthString())
 	assert.NoError(t, reader.Error)
 }
