@@ -42,7 +42,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.writer.WriteString("{\n")
 		e.indent++
 		for i, x := range vv {
-			e.Write(tt[i], x)
+			e.Write(tt[i].Schema, x)
 			e.writer.WriteString(",\n")
 		}
 		e.indent--
@@ -53,7 +53,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.indent++
 		e.writer.WriteString(strconv.FormatUint(uint64(vv.Variant), 10))
 		e.writer.WriteString(`":`)
-		e.Write(tt[vv.Variant], vv.SchemaValue)
+		e.Write(tt[vv.Variant].Schema, vv.SchemaValue)
 		e.indent--
 		e.writer.WriteString(indent)
 		e.writer.WriteRune('}')

@@ -44,7 +44,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 			e.Buffer.WriteRune('"')
 			e.Buffer.WriteString(strconv.FormatInt(int64(i), 10))
 			e.Buffer.WriteString(`":`)
-			e.Write(tt[i], x)
+			e.Write(tt[i].Schema, x)
 			// }
 			if i < len(vv)-1 {
 				e.Buffer.WriteRune(',')
@@ -55,7 +55,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.Buffer.WriteString(`{"`)
 		e.Buffer.WriteString(strconv.FormatUint(uint64(vv.Variant), 10))
 		e.Buffer.WriteString(`":`)
-		e.Write(tt[vv.Variant], vv.SchemaValue)
+		e.Write(tt[vv.Variant].Schema, vv.SchemaValue)
 		e.Buffer.WriteRune('}')
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.Buffer.WriteRune('[')

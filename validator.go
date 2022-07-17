@@ -31,14 +31,14 @@ func (e *Validator) Write(t Schema) {
 			e.appendError("wrong product field count, must be at least 2: %d", len(tt))
 		}
 		for _, field := range tt {
-			e.Write(field)
+			e.Write(field.Schema)
 		}
 	case Coproduct:
 		if len(tt) < 2 {
 			e.appendError("wrong coproduct field count, must be at least 2: %d", len(tt))
 		}
 		for _, variant := range tt {
-			e.Write(variant)
+			e.Write(variant.Schema)
 		}
 	case List:
 		e.Write(tt.Schema)

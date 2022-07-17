@@ -38,7 +38,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		e.writer.WriteRune('{')
 		for i, x := range vv {
-			e.Write(tt[i], x)
+			e.Write(tt[i].Schema, x)
 			if i < len(vv)-1 {
 				e.writer.WriteRune(',')
 			}
@@ -48,7 +48,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.writer.WriteRune('{')
 		e.writer.WriteString(strconv.FormatUint(uint64(vv.Variant), 10))
 		e.writer.WriteString(`":`)
-		e.Write(tt[vv.Variant], vv.SchemaValue)
+		e.Write(tt[vv.Variant].Schema, vv.SchemaValue)
 		e.writer.WriteRune('}')
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.writer.WriteRune('[')

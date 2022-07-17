@@ -48,12 +48,12 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.buffer.TryWriteBits(u64, uint8(bits.Len64(u64)))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		for i, x := range vv {
-			e.Write(tt[i], x)
+			e.Write(tt[i].Schema, x)
 		}
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
 		u64 := uint64(len(tt))
 		e.buffer.TryWriteBits(u64, uint8(bits.Len64(u64)))
-		e.Write(tt[vv.Variant], vv.SchemaValue)
+		e.Write(tt[vv.Variant].Schema, vv.SchemaValue)
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.writeUint(uint64(len(vv)))
 		for _, x := range vv {

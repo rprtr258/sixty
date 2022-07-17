@@ -54,13 +54,13 @@ func SchemaSize(t Schema) Size {
 	case Product:
 		sum := Size(0)
 		for _, x := range tt {
-			sum.Add(SchemaSize(x))
+			sum.Add(SchemaSize(x.Schema))
 		}
 		return sum
 	case Coproduct:
 		max := Size(0)
 		for _, x := range tt {
-			xSize := SchemaSize(x)
+			xSize := SchemaSize(x.Schema)
 			if max < xSize {
 				max = xSize
 			}

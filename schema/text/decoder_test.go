@@ -34,34 +34,34 @@ func TestDecode_EnumInt(t *testing.T) {
 func TestDecode_Everything(t *testing.T) {
 	assertSchema(
 		t,
-		`[][3][:string,([-2..2],int,uint,bit,{a,b,c})]`,
+		`[][3][str=:string,prod=(ei=[-2..2],i=int,u=uint,b=bit,e={a,b,c})]`,
 		sixty.List{Schema: sixty.Array{
 			Count: 3,
 			Schema: sixty.Coproduct{
-				sixty.String{},
-				sixty.Product{
-					sixty.EnumInt{Min: -2, Max: 2},
-					sixty.Int{},
-					sixty.Uint{},
-					sixty.Bit{},
-					sixty.Enum{Values: []string{"a", "b", "c"}},
-				},
+				{"str", sixty.String{}},
+				{"prod", sixty.Product{
+					{"ei", sixty.EnumInt{Min: -2, Max: 2}},
+					{"i", sixty.Int{}},
+					{"u", sixty.Uint{}},
+					{"b", sixty.Bit{}},
+					{"e", sixty.Enum{Values: []string{"a", "b", "c"}}},
+				}},
 			},
 		}},
 	)
 }
 
 func TestDecode_NoEndComma(t *testing.T) {
-	assertSchema(t, `(int,int)`, sixty.Product{sixty.Int{}, sixty.Int{}})
+	assertSchema(t, `(a=int,b=int)`, sixty.Product{{"a", sixty.Int{}}, {"b", sixty.Int{}}})
 }
 
 func TestDecode_EndComma(t *testing.T) {
-	assertSchema(t, `(int,int,)`, sixty.Product{sixty.Int{}, sixty.Int{}})
+	assertSchema(t, `(a=int,b=int,)`, sixty.Product{{"a", sixty.Int{}}, {"b", sixty.Int{}}})
 }
 
 func TestDecode_Spaces(t *testing.T) {
 	assertSchema(t, `(
-  int,
-  int,
-)`, sixty.Product{sixty.Int{}, sixty.Int{}})
+  a = int,
+  b = int,
+)`, sixty.Product{{"a", sixty.Int{}}, {"b", sixty.Int{}}})
 }

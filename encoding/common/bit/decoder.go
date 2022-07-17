@@ -61,13 +61,13 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	case sixty.Product:
 		res := make([]sixty.SchemaValue, 0, len(tt))
 		for _, x := range tt {
-			res = append(res, e.Read(x))
+			res = append(res, e.Read(x.Schema))
 		}
 		return sixty.ProductValue(res)
 	case sixty.Coproduct:
 		variant := e.buffer.TryReadBits(uint8(bits.Len(uint(len(tt)))))
 		return sixty.CoproductValue{
-			SchemaValue: e.Read(tt[variant]),
+			SchemaValue: e.Read(tt[variant].Schema),
 			Variant:     uint(variant),
 		}
 	case sixty.List:

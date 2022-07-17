@@ -1,9 +1,9 @@
 package sixty
 
-func maxSchemaDepth(ts []Schema) Size {
+func maxSchemaDepth(ts []NamedSchema) Size {
 	max := Size(0)
 	for _, x := range ts {
-		depth := SchemaDepth(x)
+		depth := SchemaDepth(x.Schema)
 		if max < depth {
 			max = depth
 		}

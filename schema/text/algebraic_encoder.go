@@ -20,10 +20,10 @@ func NewAlgebraicEncoder(builder strings.Builder) algebraicEncoder {
 	}
 }
 
-func (e *algebraicEncoder) writeFold(ts []sixty.Schema, op rune) {
+func (e *algebraicEncoder) writeFold(ts []sixty.NamedSchema, op rune) {
 	i := 0
 iter:
-	e.writeSubExpr(ts[i])
+	e.writeSubExpr(ts[i].Schema)
 	if i < len(ts)-1 {
 		i++
 		e.builder.WriteRune(op)

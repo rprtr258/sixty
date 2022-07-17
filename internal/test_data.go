@@ -6,13 +6,13 @@ import "github.com/rprtr258/sixty"
 
 // TODO: name fields as in comments
 var (
-	BttvEmotesDBSchemaString = `[](:string,[]:string)`
+	BttvEmotesDBSchemaString = `[](emote=:string,ids=[]:string)`
 	BttvEmotesDBSchema       = sixty.List{Schema: sixty.Product{
-		sixty.String{}, // "emote"
-		sixty.List{ // "ids"
+		{"emote", sixty.String{}},
+		{"ids", sixty.List{
 			// TODO: change to const(?) length id
 			Schema: sixty.String{},
-		},
+		}},
 	}}
 	BttvEmotesDBData = sixty.ListValue{sixty.ProductValue{
 		sixty.StringValue("Kappa"),
@@ -67,16 +67,16 @@ var (
 
 var (
 	VKInfoSchema = sixty.Coproduct{
-		sixty.Product{ // "group"
-			sixty.Uint{},   // "id"
-			sixty.String{}, // "alias"
-			sixty.String{}, // "name"
-		},
-		sixty.Product{ // "user"
-			sixty.Uint{},   //"id"
-			sixty.String{}, // "first_name"
-			sixty.String{}, // "last_name"
-		},
+		{"group", sixty.Product{
+			{"id", sixty.Uint{}},
+			{"alias", sixty.String{}},
+			{"name", sixty.String{}},
+		}},
+		{"user", sixty.Product{
+			{"id", sixty.Uint{}},
+			{"first_name", sixty.String{}},
+			{"last_name", sixty.String{}},
+		}},
 	}
-	VKInfoSchemaString = `[(uint,:string,:string),(uint,:string,:string)]`
+	VKInfoSchemaString = `[group=(id=uint,alias=:string,name=:string),user=(id=uint,first_name=:string,last_name=:string)]`
 )

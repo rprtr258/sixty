@@ -57,12 +57,16 @@ func (r *SchemaReader) skip(expected string) {
 	}
 }
 
-func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.Schema) {
+func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.NamedSchema) {
 	for {
 		if r.Error != nil {
 			return
 		}
-		res = append(res, r.ParseSchema())
+		schema := r.ParseSchema()
+		res = append(res, sixty.NamedSchema{
+			Key:    "", // TODO: implement
+			Schema: schema,
+		})
 		nextToken := r.shift()
 		if nextToken == endToken {
 			return

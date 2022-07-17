@@ -32,6 +32,11 @@ type Schema interface {
 	// TODO: get value?
 }
 
+type NamedSchema struct {
+	Key    string
+	Schema Schema
+}
+
 type LogicalSchema interface {
 	PredefKind() LogicalKind
 	// TODO: get value?
@@ -101,7 +106,7 @@ type EnumIntValue int64
 func (EnumIntValue) isSchemaValue() {}
 func (EnumIntValue) Kind() Kind     { return EnumIntKind }
 
-type Product []Schema
+type Product []NamedSchema
 
 func (Product) Kind() Kind { return ProductKind }
 
@@ -110,7 +115,7 @@ type ProductValue []SchemaValue
 func (ProductValue) isSchemaValue() {}
 func (ProductValue) Kind() Kind     { return ProductKind }
 
-type Coproduct []Schema
+type Coproduct []NamedSchema
 
 func (Coproduct) Kind() Kind { return CoproductKind }
 
@@ -159,6 +164,7 @@ type OptionalValue struct {
 func (OptionalValue) isSchemaValue() {}
 func (OptionalValue) Kind() Kind     { return OptionalKind }
 
+// TODO: predefined value for struct{} schemas
 type String struct{}
 
 func (s String) Kind() Kind            { return ListKind }

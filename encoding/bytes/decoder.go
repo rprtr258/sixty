@@ -51,11 +51,11 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 		rv.SetInt(int64(n) + tt.Min)
 	} else if tt, ok := t.(sixty.Product); ok && rv.Kind() == reflect.Struct {
 		for i, x := range tt {
-			e.Read(x, rv.Field(i))
+			e.Read(x.Schema, rv.Field(i))
 		}
 	} else if tt, ok := t.(sixty.Coproduct); ok && rv.Kind() == reflect.Interface {
 		variant := e.reader.ReadUint64()
-		e.Read(tt[variant], rv)
+		e.Read(tt[variant].Schema, rv)
 	} else if tt, ok := t.(sixty.List); ok && rv.Kind() == reflect.Slice {
 		listLen := int(e.reader.ReadUint64())
 		lst := reflect.MakeSlice(rv.Type(), listLen, listLen)

@@ -33,11 +33,11 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.writer.WriteUint64(uint64(int64(vv) - tt.Min))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		for i, x := range vv {
-			e.Write(tt[i], x)
+			e.Write(tt[i].Schema, x)
 		}
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
 		e.writer.WriteUint64(uint64(vv.Variant))
-		e.Write(tt[vv.Variant], vv.SchemaValue)
+		e.Write(tt[vv.Variant].Schema, vv.SchemaValue)
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.writer.WriteUint64(uint64(len(vv)))
 		for _, x := range vv {

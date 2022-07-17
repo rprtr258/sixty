@@ -37,8 +37,8 @@ func TestDecode_Coproduct(t *testing.T) {
 	type s interface{}
 	var got s
 	err := stream.Decode(sixty.Coproduct{
-		sixty.Int{},
-		sixty.String{},
+		{"int", sixty.Int{}},
+		{"string", sixty.String{}},
 	}, []byte{0x00, 0b01010100}, &got)
 	assert.NoError(t, err)
 	assert.Equal(t, s(int64(42)), got)
