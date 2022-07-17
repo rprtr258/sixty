@@ -17,7 +17,6 @@ func (e *Decoder) appendError(format string, args ...any) {
 	panic(fmt.Sprintf("error at position %d: ", e.reader.Pos()) + fmt.Sprintf(format, args...))
 }
 
-// TODO: out arg
 func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 	if _, ok := t.(sixty.String); ok && rv.Kind() == reflect.String {
 		rv.Set(reflect.ValueOf(e.reader.ReadLengthString()))
