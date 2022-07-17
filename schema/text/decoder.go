@@ -10,7 +10,7 @@ import (
 	"go.uber.org/multierr"
 )
 
-var TokenRegex = regexp.MustCompile(`(\[|\]|\(|\)|\{|\}|,|\?|\d+|:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)
+var TokenRegex = regexp.MustCompile(`(=|\[|\]|\(|\)|\{|\}|,|\?|\d+|:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)
 
 type SchemaReader struct {
 	tokens [][]byte
