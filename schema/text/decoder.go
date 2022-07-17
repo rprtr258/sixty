@@ -6,8 +6,9 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/rprtr258/sixty"
 	"go.uber.org/multierr"
+
+	"github.com/rprtr258/sixty"
 )
 
 var TokenRegex = regexp.MustCompile(`(=|\[|\]|\(|\)|\{|\}|,|\?|\d+|:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)
