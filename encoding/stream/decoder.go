@@ -90,9 +90,8 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 		// 		Name:  tt.Name,
 		// 		Value: e.Read(tt.Schema),
 		// 	}
-		// default:
-		// 	panic("something unimplemented")
-		// }
+	} else {
+		panic("something unimplemented")
 	}
 }
 
