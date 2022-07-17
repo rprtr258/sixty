@@ -62,9 +62,11 @@ func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.
 		if r.Error != nil {
 			return
 		}
+		fieldName := r.shift()
+		r.skip("=")
 		schema := r.ParseSchema()
 		res = append(res, sixty.NamedSchema{
-			Key:    "", // TODO: implement
+			Key:    fieldName,
 			Schema: schema,
 		})
 		nextToken := r.shift()
