@@ -12,6 +12,7 @@ type encoder struct {
 	identSize          uint
 	aliases            map[string]string
 	ident              string
+	disableIndent      bool
 	prefix             string
 	printTrailingComma bool
 }
@@ -39,7 +40,11 @@ func NewEncoder(builder strings.Builder) encoder {
 }
 
 func (e *encoder) Write(t sixty.Schema) {
-	e.builder.WriteString(strings.Repeat(e.ident, int(e.identSize)))
+	if !e.disableIndent {
+		e.builder.WriteString(strings.Repeat(e.ident, int(e.identSize)))
+	} else {
+		e.disableIndent = true
+	}
 	switch tt := t.(type) {
 	case sixty.String:
 		e.builder.WriteString(string(sixty.StringKind))
@@ -63,19 +68,21 @@ func (e *encoder) Write(t sixty.Schema) {
 		}
 		e.builder.WriteRune('}')
 	case sixty.EnumInt:
-		e.builder.WriteRune('(')
+		e.builder.WriteRune('[')
 		e.builder.WriteString(strconv.FormatInt(tt.Min, 10))
 		e.builder.WriteString("..")
 		e.builder.WriteString(strconv.FormatInt(tt.Max, 10))
-		e.builder.WriteRune(')')
+		e.builder.WriteRune(']')
 	case sixty.Product:
 		e.builder.WriteRune('(')
 		e.builder.WriteString(e.prefix)
 		e.identSize++
 		i := 0
 	iter_product:
+		e.builder.WriteString(strings.Repeat(e.ident, int(e.identSize)))
 		e.builder.WriteString(tt[i].Name)
 		e.builder.WriteString(" = ")
+		e.disableIndent = true
 		e.Write(tt[i].Schema)
 		if i < len(tt)-1 {
 			i++
@@ -95,8 +102,10 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.identSize++
 		i := 0
 	iter_coproduct:
+		e.builder.WriteString(strings.Repeat(e.ident, int(e.identSize)))
 		e.builder.WriteString(tt[i].Name)
 		e.builder.WriteString(" = ")
+		e.disableIndent = true
 		e.Write(tt[i].Schema)
 		if i < len(tt)-1 {
 			i++

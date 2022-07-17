@@ -6,7 +6,7 @@ import "github.com/rprtr258/sixty"
 
 // TODO: name fields as in comments
 var (
-	BttvEmotesDBSchemaString = `[](emote=:string,ids=[]:string)`
+	BttvEmotesDBSchemaString = `[](emote = :string,ids = []:string)`
 	BttvEmotesDBSchema       = sixty.List{Schema: sixty.Product{
 		{"emote", sixty.String{}},
 		{"ids", sixty.List{
@@ -78,5 +78,5 @@ var (
 			{"last_name", sixty.String{}},
 		}},
 	}
-	VKInfoSchemaString = `[group=(id=uint,alias=:string,name=:string),user=(id=uint,first_name=:string,last_name=:string)]`
+	VKInfoSchemaString = `[group = (id = uint,alias = :string,name = :string),user = (id = uint,first_name = :string,last_name = :string)]`
 )
