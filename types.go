@@ -33,8 +33,8 @@ type Schema interface {
 }
 
 type NamedSchema struct {
-	Key    string
-	Schema Schema
+	Name string
+	Schema
 }
 
 type LogicalSchema interface {

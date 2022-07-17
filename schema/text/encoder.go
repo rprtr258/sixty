@@ -74,6 +74,8 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.identSize++
 		i := 0
 	iter_product:
+		e.builder.WriteString(tt[i].Name)
+		e.builder.WriteString(" = ")
 		e.Write(tt[i].Schema)
 		if i < len(tt)-1 {
 			i++
@@ -93,6 +95,8 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.identSize++
 		i := 0
 	iter_coproduct:
+		e.builder.WriteString(tt[i].Name)
+		e.builder.WriteString(" = ")
 		e.Write(tt[i].Schema)
 		if i < len(tt)-1 {
 			i++

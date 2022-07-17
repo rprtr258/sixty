@@ -26,7 +26,9 @@ iter:
 	e.writeSubExpr(ts[i].Schema)
 	if i < len(ts)-1 {
 		i++
+		e.builder.WriteRune(' ')
 		e.builder.WriteRune(op)
+		e.builder.WriteRune(' ')
 		goto iter
 	}
 }
@@ -52,10 +54,10 @@ func (e *algebraicEncoder) writeSubExpr(t sixty.Schema) {
 		e.writeSubExpr(tt.Schema)
 	case sixty.Array:
 		e.builder.WriteString(strconv.FormatUint(uint64(tt.Count), 10))
-		e.builder.WriteRune('*')
+		e.builder.WriteString(" * ")
 		e.writeSubExpr(tt.Schema)
 	case sixty.Optional:
-		e.builder.WriteString("1+")
+		e.builder.WriteString("1 + ")
 		e.writeSubExpr(tt.Schema)
 	default:
 		fmt.Printf("%T\n", t)
