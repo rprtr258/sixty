@@ -40,14 +40,14 @@ Data format is divided into two parts: schema definition and data. Schema is abo
 E.g. bitfield can be simulated in following way:
 ```
 permission = (
-  read = bit
-  write = bit
-  execute = bit
+  read = bit,
+  write = bit,
+  execute = bit,
 )
 full_permission = (
-  owner = permission
-  group = permission
-  other = permission
+  owner = permission,
+  group = permission,
+  other = permission,
 )
 ```
 
