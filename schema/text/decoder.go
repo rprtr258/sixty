@@ -11,7 +11,10 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-var TokenRegex = regexp.MustCompile(`(=|\[|\]|\(|\)|\{|\}|,|\?|\d+|:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)
+var (
+	TokenRegex      = regexp.MustCompile(`(=|\[|\]|\(|\)|\{|\}|,|\?|\d+|:(string)|[a-zA-Z-_][a-zA-Z0-9-_]*|\.{2})`)
+	IdentifierRegex = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_-]*$`)
+)
 
 type SchemaReader struct {
 	tokens [][]byte
@@ -64,6 +67,10 @@ func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.
 			return
 		}
 		fieldName := r.shift()
+		if !IdentifierRegex.Match([]byte(fieldName)) {
+			r.appendError("%s is incorrect identifier", fieldName)
+			return
+		}
 		r.skip("=")
 		schema := r.ParseSchema()
 		res = append(res, sixty.NamedSchema{
@@ -135,8 +142,12 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		if r.Error != nil {
 			return nil
 		}
-		// TODO: assert identifier
-		vals = append(vals, r.shift())
+		enumValue := r.shift()
+		if !IdentifierRegex.Match([]byte(enumValue)) {
+			r.appendError("%s is incorrect enum value", enumValue)
+			return nil
+		}
+		vals = append(vals, enumValue)
 		if r.shift() == "," {
 			goto iter
 		}
