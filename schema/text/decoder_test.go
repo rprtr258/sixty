@@ -59,6 +59,11 @@ func TestDecode_EndComma(t *testing.T) {
 	assertSchema(t, `(a=int,b=int,)`, sixty.Product{{"a", sixty.Int{}}, {"b", sixty.Int{}}})
 }
 
+func TestDecode_Alias(t *testing.T) {
+	assertSchema(t, `a = int
+(first = a, second = a)`, sixty.Product{{"first", sixty.Int{}}, {"second", sixty.Int{}}})
+}
+
 func TestDecode_Spaces(t *testing.T) {
 	assertSchema(t, `(
   a = int,

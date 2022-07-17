@@ -17,10 +17,18 @@ var (
 )
 
 type SchemaReader struct {
-	tokens [][]byte
-	index  uint
-	pos    uint
-	Error  error
+	aliases map[string]sixty.Schema
+	tokens  [][]byte
+	index   uint
+	// TODO: fix not counting space chars
+	pos   uint
+	Error error
+}
+
+func (r *SchemaReader) appendError(format string, args ...any) {
+	multierr.AppendInto(&r.Error, errors.New(
+		fmt.Sprintf("error at position %d: ", r.pos)+fmt.Sprintf(format, args...)),
+	)
 }
 
 // shift gets next token and moves reader one step forward
@@ -47,16 +55,10 @@ func (r *SchemaReader) unshift() {
 	r.index--
 }
 
-func (r *SchemaReader) appendError(format string, args ...any) {
-	multierr.AppendInto(&r.Error, errors.New(
-		fmt.Sprintf("error at position %d: ", r.pos)+fmt.Sprintf(format, args...)),
-	)
-}
-
 func (r *SchemaReader) skip(expected string) {
 	token := r.shift()
 	if token != expected {
-		r.appendError("expected %s, found %s", token, expected)
+		r.appendError("expected %q, found %q", expected, token)
 		r.unshift()
 	}
 }
@@ -152,19 +154,28 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 			goto iter
 		}
 		return sixty.Enum{Values: vals}
-	// TODO: alias
 	case string(sixty.StringKind):
 		return sixty.String{}
 	default:
-		r.appendError("unexpected token %q", token)
-		return nil
+		name := token
+		nextToken := r.shift()
+		if nextToken != "=" {
+			r.unshift()
+			return r.aliases[name]
+		}
+		r.aliases[name] = r.ParseSchema()
+		if r.Error != nil {
+			return nil
+		}
+		return r.ParseSchema()
 	}
 }
 
 func Tokenize(s string) SchemaReader {
 	return SchemaReader{
-		tokens: TokenRegex.FindAll([]byte(s), -1),
-		index:  0,
+		tokens:  TokenRegex.FindAll([]byte(s), -1),
+		aliases: make(map[string]sixty.Schema),
+		index:   0,
 	}
 }
 
