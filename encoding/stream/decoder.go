@@ -85,11 +85,6 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 		// 	default:
 		// 		e.appendError("option variant must be either 0 or 1, but it is %d", isPresent)
 		// 	}
-		// case sixty.Alias:
-		// 	return sixty.AliasValue{
-		// 		Name:  tt.Name,
-		// 		Value: e.Read(tt.Schema),
-		// 	}
 	} else {
 		panic("something unimplemented")
 	}

@@ -14,13 +14,12 @@ const (
 	ListKind
 	ArrayKind
 	OptionalKind
-	AliasKind
 )
 
-type PredefKind string
+type LogicalKind string
 
 const (
-	StringKind PredefKind = ":string"
+	StringKind LogicalKind = ":string"
 	// Date
 	// Datetime
 	//    millis,micros,nanos
@@ -33,9 +32,8 @@ type Schema interface {
 	// TODO: get value?
 }
 
-type PredefSchema interface {
-	PredefKind() PredefKind
-	Schema() Schema
+type LogicalSchema interface {
+	PredefKind() LogicalKind
 	// TODO: get value?
 }
 
@@ -161,37 +159,12 @@ type OptionalValue struct {
 func (OptionalValue) isSchemaValue() {}
 func (OptionalValue) Kind() Kind     { return OptionalKind }
 
-// TODO: alias in alias???
-type Alias struct {
-	Schema
-	Name string
-}
-
-func (Alias) Kind() Kind { return AliasKind }
-
-type AliasValue struct {
-	Name  string
-	Value SchemaValue
-}
-
-func (AliasValue) isSchemaValue() {}
-func (AliasValue) Kind() Kind     { return AliasKind }
-
 type String struct{}
 
-func (s String) Kind() Kind           { return s.Schema().Kind() }
-func (String) PredefKind() PredefKind { return StringKind }
-func (String) Schema() Schema         { return List{Schema: Rune{}} }
+func (s String) Kind() Kind            { return ListKind }
+func (String) PredefKind() LogicalKind { return StringKind }
 
 type StringValue string
 
 func (StringValue) isSchemaValue() {}
 func (StringValue) Kind() Kind     { return ListKind }
-
-// type TypeWithMetadata struct {
-// 	Type
-// 	KVMeta    map[string]string
-// 	FlagsMeta map[string]struct{}
-// }
-
-// TODO: Metadata String

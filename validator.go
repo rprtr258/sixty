@@ -49,11 +49,6 @@ func (e *Validator) Write(t Schema) {
 		e.Write(tt.Schema)
 	case Optional:
 		e.Write(tt.Schema)
-	case Alias:
-		if !IdentifierRegex.MatchString(tt.Name) {
-			e.appendError("invalid alias name: %q", tt.Name)
-		}
-		e.Write(tt.Schema)
 	default:
 		panic("something unimplemented")
 	}

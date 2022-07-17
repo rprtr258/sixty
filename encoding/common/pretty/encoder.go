@@ -42,11 +42,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.writer.WriteString("{\n")
 		e.indent++
 		for i, x := range vv {
-			if ttt, vvv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](tt[i], vv); ok {
-				e.Write(ttt.Schema, vvv.Value)
-			} else {
-				e.Write(tt[i], x)
-			}
+			e.Write(tt[i], x)
 			e.writer.WriteString(",\n")
 		}
 		e.indent--
@@ -85,8 +81,6 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		} else {
 			e.Write(tt.Schema, vv.SchemaValue)
 		}
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](t, v); ok {
-		e.Write(tt.Schema, vv.Value)
 	} else {
 		panic("something unimplemented")
 	}

@@ -126,14 +126,15 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.identSize = 0
 		e.Write(tt.Schema)
 		e.identSize = tmp
-	case sixty.Alias:
-		e.builder.WriteString(tt.Name)
-		if _, ok := e.aliases[tt.Name]; ok {
-			return
-		}
-		pp := encoder{aliases: e.aliases}
-		pp.Write(tt.Schema)
-		e.aliases[tt.Name] = pp.String()
+	// TODO: remove
+	// case sixty.Alias:
+	// 	e.builder.WriteString(tt.Name)
+	// 	if _, ok := e.aliases[tt.Name]; ok {
+	// 		return
+	// 	}
+	// 	pp := encoder{aliases: e.aliases}
+	// 	pp.Write(tt.Schema)
+	// 	e.aliases[tt.Name] = pp.String()
 	default:
 		panic("something unimplemented")
 	}

@@ -25,8 +25,6 @@ func SchemaDepth(t Schema) Size {
 		return 1 + SchemaDepth(tt.Schema)
 	case Optional:
 		return 1 + SchemaDepth(tt.Schema)
-	case Alias:
-		return SchemaDepth(tt.Schema)
 	default:
 		panic("something unimplemented")
 	}

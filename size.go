@@ -73,8 +73,6 @@ func SchemaSize(t Schema) Size {
 		return SchemaSize(tt.Schema).Multiply(tt.Count)
 	case Optional:
 		return 1 + SchemaSize(tt.Schema)
-	case Alias:
-		return SchemaSize(tt.Schema)
 	default:
 		panic("something unimplemented")
 	}

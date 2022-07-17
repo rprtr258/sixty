@@ -73,8 +73,6 @@ func (e *algebraicEncoder) Write(t sixty.Schema) {
 		e.writeFold(tt, '*')
 	case sixty.Coproduct:
 		e.writeFold(tt, '+')
-	case sixty.Alias:
-		e.Write(tt.Schema)
 	case sixty.List, sixty.Array, sixty.Optional:
 		e.writeSubExpr(tt)
 	default:

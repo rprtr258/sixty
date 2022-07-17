@@ -34,17 +34,18 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		e.Buffer.WriteRune('{')
 		for i, x := range vv {
-			if ttt, vvv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](tt[i], vv); ok {
-				e.Buffer.WriteRune('"')
-				e.Buffer.WriteString(ttt.Name)
-				e.Buffer.WriteString(`":`)
-				e.Write(ttt.Schema, vvv.Value)
-			} else {
-				e.Buffer.WriteRune('"')
-				e.Buffer.WriteString(strconv.FormatInt(int64(i), 10))
-				e.Buffer.WriteString(`":`)
-				e.Write(tt[i], x)
-			}
+			// TODO: remove
+			// if ttt, vvv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](tt[i], vv); ok {
+			// 	e.Buffer.WriteRune('"')
+			// 	e.Buffer.WriteString(ttt.Name)
+			// 	e.Buffer.WriteString(`":`)
+			// 	e.Write(ttt.Schema, vvv.Value)
+			// } else {
+			e.Buffer.WriteRune('"')
+			e.Buffer.WriteString(strconv.FormatInt(int64(i), 10))
+			e.Buffer.WriteString(`":`)
+			e.Write(tt[i], x)
+			// }
 			if i < len(vv)-1 {
 				e.Buffer.WriteRune(',')
 			}
@@ -84,8 +85,6 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		} else {
 			e.Write(tt.Schema, vv.SchemaValue)
 		}
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](t, v); ok {
-		e.Write(tt.Schema, vv.Value)
 	} else {
 		panic("something unimplemented")
 	}

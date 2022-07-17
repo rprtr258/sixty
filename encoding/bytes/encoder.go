@@ -54,8 +54,6 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 			e.writer.WriteUint64(1)
 			e.Write(tt.Schema, vv.SchemaValue)
 		}
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](t, v); ok {
-		e.Write(tt.Schema, vv.Value)
 	} else {
 		panic("something unimplemented")
 	}

@@ -38,11 +38,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		e.writer.WriteRune('{')
 		for i, x := range vv {
-			if ttt, vvv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](tt[i], vv); ok {
-				e.Write(ttt.Schema, vvv.Value)
-			} else {
-				e.Write(tt[i], x)
-			}
+			e.Write(tt[i], x)
 			if i < len(vv)-1 {
 				e.writer.WriteRune(',')
 			}
@@ -82,8 +78,6 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		} else {
 			e.Write(tt.Schema, vv.SchemaValue)
 		}
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](t, v); ok {
-		e.Write(tt.Schema, vv.Value)
 	} else {
 		panic("something unimplemented")
 	}
