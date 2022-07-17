@@ -70,3 +70,18 @@ func TestDecode_Spaces(t *testing.T) {
   b = int,
 )`, sixty.Product{{"a", sixty.Int{}}, {"b", sixty.Int{}}})
 }
+
+// TODO: store aliases in aliases cache
+// func TestDecode_Alias2(t *testing.T) {
+// 	assertSchema(t, `
+// x0 = (l = int, r = int)
+// x1 = (l = x0, r = x0)
+// x2 = (l = x1, r = x1)
+// x3 = (l = x2, r = x2)
+// x4 = (l = x3, r = x3)
+// x5 = (l = x4, r = x4)
+// x6 = (l = x5, r = x5)
+// x7 = (l = x6, r = x6)
+// x8 = (l = x7, r = x7)
+// (first = x8, second = x8)`, sixty.Product{{"first", sixty.Int{}}, {"second", sixty.Int{}}})
+// }
