@@ -13,6 +13,7 @@ type Decoder struct {
 	buffer *bitio.CountReader
 }
 
+// TODO: compare encodings, choose efficient
 func (e *Decoder) readUint() uint64 {
 	n := 1
 	for e.buffer.TryReadBool() {

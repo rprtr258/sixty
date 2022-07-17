@@ -33,19 +33,11 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.Buffer.WriteString(strconv.FormatInt(int64(vv), 10))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		e.Buffer.WriteRune('{')
-		for i, x := range vv {
-			// TODO: remove
-			// if ttt, vvv, ok := sixty.AssertSchemas[sixty.Alias, sixty.AliasValue](tt[i], vv); ok {
-			// 	e.Buffer.WriteRune('"')
-			// 	e.Buffer.WriteString(ttt.Name)
-			// 	e.Buffer.WriteString(`":`)
-			// 	e.Write(ttt.Schema, vvv.Value)
-			// } else {
+		for i, vvv := range vv {
 			e.Buffer.WriteRune('"')
-			e.Buffer.WriteString(strconv.FormatInt(int64(i), 10))
+			e.Buffer.WriteString(tt[i].Name)
 			e.Buffer.WriteString(`":`)
-			e.Write(tt[i].Schema, x)
-			// }
+			e.Write(tt[i].Schema, vvv)
 			if i < len(vv)-1 {
 				e.Buffer.WriteRune(',')
 			}
