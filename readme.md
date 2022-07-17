@@ -22,9 +22,9 @@ Data format is divided into two parts: schema definition and data. Schema is abo
 ### Basic types
 |name|description|
 |--|--|
-|bit|one bit of data|
-|int, uint|arbitarily big, but usually bounded to 64 bits|
-|rune|unicode char|
+|`bit`|one bit of data|
+|`int`, `uint`|arbitarily big, but usually bounded to 64 bits|
+|`rune`|unicode char|
 
 ### Composite types
 |name|syntax|description|
