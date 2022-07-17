@@ -20,7 +20,7 @@ const (
 type PredefKind string
 
 const (
-	StringKind PredefKind = "std:string"
+	StringKind PredefKind = ":string"
 	// Date
 	// Datetime
 	//    millis,micros,nanos

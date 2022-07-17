@@ -34,7 +34,7 @@ func TestDecode_EnumInt(t *testing.T) {
 func TestDecode_Everything(t *testing.T) {
 	assertSchema(
 		t,
-		`[][3][std:string,([-2..2],int,uint,bit,{a,b,c})]`,
+		`[][3][:string,([-2..2],int,uint,bit,{a,b,c})]`,
 		sixty.List{Schema: sixty.Array{
 			Count: 3,
 			Schema: sixty.Coproduct{
