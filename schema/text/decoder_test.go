@@ -11,6 +11,7 @@ import (
 )
 
 func assertSchema(t *testing.T, schemaString string, expected sixty.Schema) {
+	t.Helper()
 	got, err := text.ParseSchema(schemaString)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, got)
