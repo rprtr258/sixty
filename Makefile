@@ -2,10 +2,6 @@
 help: # show list of all commands
 	@grep -E '^[a-zA-Z_-]+:.*?# .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?# "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: run
-run: # run app
-	go run main.go
-
 .PHONY: test
 test: TEST_DIR?=...
 test: # run unit tests
