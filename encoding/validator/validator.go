@@ -1,8 +1,10 @@
-package sixty
+package validator
 
 import (
 	"fmt"
 	"regexp"
+
+	"github.com/rprtr258/sixty"
 )
 
 // InvalidSchemaError - schema definition rejected by Validator, Reason describes why.
@@ -24,39 +26,39 @@ func (v *Validator) appendErrorf(format string, args ...any) {
 	v.Errs = append(v.Errs, InvalidSchemaError{Reason: fmt.Sprintf(format, args...)})
 }
 
-func (e *Validator) Write(t Schema) {
+func (e *Validator) Write(t sixty.Schema) {
 	switch tt := t.(type) {
-	case String, Bit, Int, Uint, Rune:
-	case Enum:
+	case sixty.String, sixty.Bit, sixty.Int, sixty.Uint, sixty.Rune:
+	case sixty.Enum:
 		if len(tt.Values) < 2 {
 			e.appendErrorf("wrong enum Values count, must be at least 2: %v", tt.Values)
 		}
-	case EnumInt:
+	case sixty.EnumInt:
 		if tt.Max <= tt.Min {
 			e.appendErrorf("incorrect enum int, max must be greater than min: min=%d, max=%d", tt.Min, tt.Max)
 		}
-	case Product:
+	case sixty.Product:
 		if len(tt) < 2 {
 			e.appendErrorf("wrong product field count, must be at least 2: %d", len(tt))
 		}
 		for _, field := range tt {
 			e.Write(field.Schema)
 		}
-	case Coproduct:
+	case sixty.Coproduct:
 		if len(tt) < 2 {
 			e.appendErrorf("wrong coproduct field count, must be at least 2: %d", len(tt))
 		}
 		for _, variant := range tt {
 			e.Write(variant.Schema)
 		}
-	case List:
+	case sixty.List:
 		e.Write(tt.Schema)
-	case Array:
+	case sixty.Array:
 		if tt.Count < 2 {
 			e.appendErrorf("wrong array length, must be at least 2: %d", tt.Count)
 		}
 		e.Write(tt.Schema)
-	case Optional:
+	case sixty.Optional:
 		e.Write(tt.Schema)
 	default:
 		panic("something unimplemented")
