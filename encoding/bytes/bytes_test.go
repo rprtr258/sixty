@@ -10,6 +10,14 @@ import (
 	"github.com/rprtr258/sixty/internal"
 )
 
+func TestBttvDBEncode(t *testing.T) {
+	t.Parallel()
+
+	got, err := bytes.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	assert.NoError(t, err)
+	assert.Equal(t, internal.BttvEmotesDBBytes, got)
+}
+
 func TestDecode_BttvDB(t *testing.T) {
 	t.Parallel()
 

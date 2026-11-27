@@ -15,3 +15,11 @@ func TestBttvDBDecode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, internal.BttvEmotesDBData, got)
 }
+
+func TestBttvDBEncode(t *testing.T) {
+	t.Parallel()
+
+	got, err := bit.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	assert.NoError(t, err)
+	assert.Equal(t, internal.BttvEmotesDBBits, got)
+}
