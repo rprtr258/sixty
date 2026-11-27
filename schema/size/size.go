@@ -17,7 +17,9 @@ func log2(x uint64) Size {
 }
 
 func (x *Size) Add(y Size) *Size {
-	if *x != Inf && y != Inf {
+	if *x == Inf || y == Inf {
+		*x = Inf
+	} else {
 		*x += y
 	}
 	return x
@@ -63,7 +65,10 @@ func SchemaSize(t sixty.Schema) Size {
 		max := Size(0)
 		for _, x := range tt {
 			xSize := SchemaSize(x.Schema)
-			if max < xSize {
+			if xSize == Inf {
+				return Inf
+			}
+			if xSize > max {
 				max = xSize
 			}
 		}

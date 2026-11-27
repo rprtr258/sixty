@@ -33,13 +33,9 @@ func TestBttvDBEncode(t *testing.T) {
 	require.Equal(t, bttvEmotesDBBits, got)
 }
 
-// decoder reads uints as unary count prefix; encoder writes variant count
-// instead of the variant index for coproducts, so coproduct round trips panic.
 func TestRoundTripAllTypes(t *testing.T) {
 	t.Parallel()
 
-	// enum value must have full bit width (bits.Len64(value) == bits.Len(len)),
-	// same for enum int values, else encoder/decoder bit counts disagree
 	testCases := []struct {
 		schema sixty.Schema
 		value  sixty.SchemaValue
@@ -50,7 +46,9 @@ func TestRoundTripAllTypes(t *testing.T) {
 		{sixty.Int{}, sixty.IntValue(0)},
 		{sixty.Uint{}, sixty.UintValue(42)},
 		{sixty.Rune{}, sixty.RuneValue('a')},
+		{sixty.Enum{Values: []string{"a", "b", "c"}}, sixty.EnumValue(0)},
 		{sixty.Enum{Values: []string{"a", "b", "c"}}, sixty.EnumValue(2)},
+		{sixty.EnumInt{Min: -5, Max: 5}, sixty.EnumIntValue(0)},
 		{sixty.EnumInt{Min: -5, Max: 5}, sixty.EnumIntValue(5)},
 		{sixty.Product{{"x", sixty.Int{}}, {"b", sixty.Bit{}}}, sixty.ProductValue{sixty.IntValue(5), sixty.BitValue(true)}},
 		{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{sixty.BitValue(true), sixty.BitValue(false)}},
@@ -64,14 +62,13 @@ func TestRoundTripAllTypes(t *testing.T) {
 	}
 }
 
-// optional-present decodes with IsValid=false: known decoder bug, documented here.
 func TestDecodeOptionalPresent(t *testing.T) {
 	t.Parallel()
 
 	// marker byte 0x01 (present) + zigzag(42)=84 in unary format: 111111 0 1010100
 	got, err := bit.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x01, 0xFD, 0x50})
 	require.NoError(t, err)
-	require.Equal(t, sixty.OptionalValue{SchemaValue: sixty.IntValue(42), IsValid: false}, got)
+	require.Equal(t, sixty.OptionalValue{SchemaValue: sixty.IntValue(42), IsValid: true}, got)
 }
 
 func TestDecodeCoproduct(t *testing.T) {
@@ -89,22 +86,16 @@ func TestDecodeCoproduct(t *testing.T) {
 	)
 }
 
-// encoder writes variant count (not index) as the tag, so decoding its own
-// coproduct output indexes out of range: known bug, documented here.
-func TestCoproductEncodeDecodePanics(t *testing.T) {
+func TestCoproductRoundTrip(t *testing.T) {
 	t.Parallel()
 
-	data, err := bit.Encode(
-		sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}},
-		sixty.CoproductValue{SchemaValue: sixty.IntValue(42), Variant: 0},
-	)
-	require.NoError(t, err)
-	require.Panics(t, func() {
-		_, _ = bit.Decode(
-			sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}},
-			data,
-		)
-	})
+	schema := sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}}
+	for _, test := range []sixty.CoproductValue{
+		{SchemaValue: sixty.IntValue(42), Variant: 0},
+		{SchemaValue: sixty.StringValue("hi"), Variant: 1},
+	} {
+		require.Equal(t, test, internal.RoundTrip(t, schema, test, bit.Encode, bit.Decode))
+	}
 }
 
 func TestDecodeEnumOutOfRangePanics(t *testing.T) {
@@ -131,8 +122,9 @@ func TestDecodeTruncated(t *testing.T) {
 	require.Error(t, err)
 }
 
-// encoding a present optional works; only decoding its own output panics
-// (the marker bit-run is read back as a full byte, see TestDecodeOptionalPresent).
+// encoding a present optional works; decoding its own output panics: the
+// encoder writes the marker as a writeUint bit-run (1-2 bits) while the
+// decoder reads it as a full byte.
 func TestEncodeOptionalPresent(t *testing.T) {
 	t.Parallel()
 

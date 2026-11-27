@@ -61,6 +61,18 @@ func TestDecode_BttvDB(t *testing.T) {
 	)
 }
 
+func TestNonAsciiStringRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	// length prefix counts runes: "ёжик" is 5 runes but 9 bytes
+	data, err := stream.Encode(sixty.String{}, sixty.StringValue("ёжик"))
+	require.NoError(t, err)
+
+	var got string
+	require.NoError(t, stream.Decode(sixty.String{}, data, &got))
+	require.Equal(t, "ёжик", got)
+}
+
 func TestDecode_Coproduct(t *testing.T) {
 	t.Parallel()
 

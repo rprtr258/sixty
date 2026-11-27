@@ -41,19 +41,18 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		runeBuffer := make([]byte, 4)
 		n := utf8.EncodeRune(runeBuffer, rune(vv))
 		e.buffer.TryWrite(runeBuffer[:n])
-	} else if _, vv, ok := sixty.AssertSchemas[sixty.Enum, sixty.EnumValue](t, v); ok {
-		u64 := uint64(vv)
-		e.buffer.TryWriteBits(u64, uint8(bits.Len64(u64)))
+	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Enum, sixty.EnumValue](t, v); ok {
+		// width must match the decoder's bits.Len(len(values)) read
+		e.buffer.TryWriteBits(uint64(vv), uint8(bits.Len64(uint64(len(tt.Values)))))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.EnumInt, sixty.EnumIntValue](t, v); ok {
-		u64 := uint64(int64(vv) - tt.Min)
-		e.buffer.TryWriteBits(u64, uint8(bits.Len64(u64)))
+		// value stored as offset from Min, at the width of the full [Min..Max] span
+		e.buffer.TryWriteBits(uint64(int64(vv)-tt.Min), uint8(bits.Len64(uint64(tt.Max-tt.Min))))
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		for i, x := range vv {
 			e.Write(tt[i].Schema, x)
 		}
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
-		u64 := uint64(len(tt))
-		e.buffer.TryWriteBits(u64, uint8(bits.Len64(u64)))
+		e.buffer.TryWriteBits(uint64(vv.Variant), uint8(bits.Len64(uint64(len(tt)))))
 		e.Write(tt[vv.Variant].Schema, vv.SchemaValue)
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.writeUint(uint64(len(vv)))

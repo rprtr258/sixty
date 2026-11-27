@@ -92,7 +92,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		case 1:
 			return sixty.OptionalValue{
 				SchemaValue: e.Read(tt.Schema),
-				IsValid:     false,
+				IsValid:     true,
 			}
 		default:
 			e.appendErrorf("option variant must be either 0 or 1, but it is %d", isPresent)

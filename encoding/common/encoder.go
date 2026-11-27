@@ -120,10 +120,12 @@ func encodeProduct(tt sixty.Product, rv reflect.Value) (sixty.SchemaValue, error
 
 // First matching variant wins.
 func encodeCoproduct(tt sixty.Coproduct, rv reflect.Value) (sixty.SchemaValue, error) {
-	if rv.Kind() != reflect.Interface {
-		return nil, kindMismatch("interface", rv.Kind())
+	// top-level Encode receives bare concrete values (reflect.ValueOf unwraps
+	// the any), values nested in struct fields arrive interface-typed
+	inner := rv
+	if inner.Kind() == reflect.Interface {
+		inner = inner.Elem()
 	}
-	inner := rv.Elem()
 	for i, variant := range tt {
 		variantValue, err := encode(variant.Schema, inner)
 		if err == nil {

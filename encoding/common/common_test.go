@@ -310,7 +310,6 @@ func TestEncodeKindMismatches(t *testing.T) {
 		{sixty.EnumInt{Min: 0, Max: 5}, struct{ X int64 }{6}, `field "x": value 6 out of enum int range [0..5]`},
 		// containers encode the bare value, so mismatch messages have no field prefix
 		{sixty.Product{{"x", sixty.Int{}}}, 42, `expected struct, got int`},
-		{sixty.Coproduct{{"x", sixty.Int{}}}, 42, `expected interface, got int`},
 		{sixty.List{Schema: sixty.Int{}}, 42, `expected slice, got int`},
 		{sixty.Array{Schema: sixty.Int{}, Count: 2}, 42, `expected array, got int`},
 	}
@@ -352,9 +351,16 @@ func TestEncodeCoproductFirstMatchWins(t *testing.T) {
 
 	schema := sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}}
 
-	// coproduct values must sit in interface-typed struct fields: Encode's top
-	// level reflect.ValueOf unwraps interfaces, so a bare any(int64) has int64 kind
-	got, err := common.Encode(sixty.Product{{"v", schema}}, struct{ V any }{int64(42)})
+	// bare top-level values are matched against the variants directly
+	got, err := common.Encode(schema, int64(42))
+	require.NoError(t, err)
+	require.Equal(t, sixty.CoproductValue{SchemaValue: sixty.IntValue(42), Variant: 0}, got)
+
+	got, err = common.Encode(schema, "hi")
+	require.NoError(t, err)
+	require.Equal(t, sixty.CoproductValue{SchemaValue: sixty.StringValue("hi"), Variant: 1}, got)
+
+	got, err = common.Encode(sixty.Product{{"v", schema}}, struct{ V any }{int64(42)})
 	require.NoError(t, err)
 	require.Equal(t,
 		sixty.ProductValue{sixty.CoproductValue{SchemaValue: sixty.IntValue(42), Variant: 0}},

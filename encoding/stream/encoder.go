@@ -2,6 +2,7 @@ package stream
 
 import (
 	"bytes"
+	"unicode/utf8"
 
 	"github.com/rprtr258/sixty"
 )
@@ -12,7 +13,8 @@ type Encoder struct {
 
 func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
-		e.writer.WriteUint64(uint64(len(vv)))
+		// length prefix counts runes: ReadLengthString reads that many runes
+		e.writer.WriteUint64(uint64(utf8.RuneCountInString(string(vv))))
 		e.writer.WriteString(string(vv))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Bit, sixty.BitValue](t, v); ok {
 		if vv {

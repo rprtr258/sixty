@@ -55,11 +55,10 @@ func TestSchemaSizePrimitives(t *testing.T) {
 			{"a", sixty.Bit{}},
 			{"b", sixty.Enum{Values: []string{"x", "y", "z", "w"}}},
 		}, 5}, // max(1, 3) + bits.Len64(2) = 5
-		// Inf branch does not dominate the max since Inf is encoded as -1
 		{sixty.Coproduct{
 			{"a", sixty.Bit{}},
 			{"b", sixty.String{}},
-		}, 3},
+		}, size.Inf},
 		{internal.BttvEmotesDBSchema, size.Inf},
 	}
 	for _, test := range testCases {
@@ -82,8 +81,7 @@ func TestSizeAdd(t *testing.T) {
 	require.Equal(t, size.Size(5), *x.Add(0))
 
 	y := size.Size(3)
-	// adding Inf to a finite size is a no-op, not saturation
-	require.Equal(t, size.Size(3), *y.Add(size.Inf))
+	require.Equal(t, size.Inf, *y.Add(size.Inf))
 
 	z := size.Inf
 	require.Equal(t, size.Inf, *z.Add(4))
