@@ -12,80 +12,185 @@ type Decoder struct {
 	reader sixty.Reader
 }
 
+func isSignedKind(kind reflect.Kind) bool {
+	return reflect.Int <= kind && kind <= reflect.Int64
+}
+
+func isUnsignedKind(kind reflect.Kind) bool {
+	return reflect.Uint <= kind && kind <= reflect.Uint64
+}
+
 // TODO: error handling.
 func (e *Decoder) appendErrorf(format string, args ...any) {
 	panic(fmt.Sprintf("error at position %d: ", e.reader.Pos()) + fmt.Sprintf(format, args...))
 }
 
 func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
-	if _, ok := t.(sixty.String); ok && rv.Kind() == reflect.String {
-		rv.Set(reflect.ValueOf(e.reader.ReadLengthString()))
-	} else if _, _, ok := sixty.AssertSchemas[sixty.Bit, bool](t, rv); ok {
-		b := e.reader.ReadByte()
-		switch b {
-		case 0:
-			rv.SetBool(false)
-		case 1:
-			rv.SetBool(true)
-		default:
-			e.appendErrorf("expected bit which is either 0 or 1, found: %d", b)
-		}
-	} else if _, _, ok := sixty.AssertSchemas[sixty.Int, int64](t, rv); ok {
-		rv.SetInt(e.reader.ReadInt64())
-	} else if _, _, ok := sixty.AssertSchemas[sixty.Int, any](t, rv); ok {
-		rv.Set(reflect.ValueOf(e.reader.ReadInt64()))
-	} else if _, _, ok := sixty.AssertSchemas[sixty.Uint, uint64](t, rv); ok {
-		rv.SetUint(e.reader.ReadUint64())
-	} else if _, _, ok := sixty.AssertSchemas[sixty.Rune, rune](t, rv); ok {
-		rv.Set(reflect.ValueOf(e.reader.ReadRune()))
-	} else if tt, _, ok := sixty.AssertSchemas[sixty.Enum, uint](t, rv); ok {
-		n := e.reader.ReadUint64()
-		if n < uint64(len(tt.Values)) {
-			rv.SetUint(n)
-			return
-		}
-		e.appendErrorf("found %d'th enum value while there are only %d of them", n, len(tt.Values))
-	} else if tt, _, ok := sixty.AssertSchemas[sixty.EnumInt, int64](t, rv); ok {
-		n := e.reader.ReadUint64()
-		rv.SetInt(int64(n) + tt.Min)
-	} else if tt, ok := t.(sixty.Product); ok && rv.Kind() == reflect.Struct {
-		for i, x := range tt {
-			e.Read(x.Schema, rv.Field(i))
-		}
-	} else if tt, ok := t.(sixty.Coproduct); ok && rv.Kind() == reflect.Interface {
-		variant := e.reader.ReadUint64()
-		e.Read(tt[variant].Schema, rv)
-	} else if tt, ok := t.(sixty.List); ok && rv.Kind() == reflect.Slice {
-		lst := reflect.MakeSlice(rv.Type(), 0, 0)
-		hasNext := e.reader.ReadByte()
-		for hasNext == 1 {
-			x := reflect.New(rv.Type().Elem()).Elem()
-			e.Read(tt.Schema, x)
-			lst = reflect.Append(lst, x)
-			hasNext = e.reader.ReadByte()
-		}
-		rv.Set(lst)
-		// case sixty.Array:
-		// 	res := make([]sixty.SchemaValue, 0, tt.Count)
-		// 	for i := uint(0); i < tt.Count; i++ {
-		// 		res = append(res, e.Read(tt.Schema))
-		// 	}
-		// 	return sixty.ArrayValue(res)
-		// case sixty.Optional:
-		// 	isPresent := e.buffer.ReadByte()
-		// 	switch isPresent {
-		// 	case 0:
-		// 		return sixty.OptionalValue{IsValid: false}
-		// 	case 1:
-		// 		return sixty.OptionalValue{
-		// 			SchemaValue: e.Read(tt.Schema),
-		// 			IsValid:     false,
-		// 		}
-		// 	default:
-		// 		e.appendError("option variant must be either 0 or 1, but it is %d", isPresent)
-		// 	}
-	} else {
+	switch tt := t.(type) {
+	case sixty.String:
+		e.readString(rv)
+	case sixty.Bit:
+		e.readBit(rv)
+	case sixty.Int:
+		e.readInt(rv)
+	case sixty.Uint:
+		e.readUint(rv)
+	case sixty.Rune:
+		e.readRune(rv)
+	case sixty.Enum:
+		e.readEnum(tt, rv)
+	case sixty.EnumInt:
+		e.readEnumInt(tt, rv)
+	case sixty.Product:
+		e.readProduct(tt, rv)
+	case sixty.Coproduct:
+		e.readCoproduct(tt, rv)
+	case sixty.List:
+		e.readList(tt, rv)
+	case sixty.Array:
+		e.readArray(tt, rv)
+	case sixty.Optional:
+		e.readOptional(tt, rv)
+	default:
 		panic("something unimplemented")
+	}
+}
+
+func (e *Decoder) readString(rv reflect.Value) {
+	if rv.Kind() != reflect.String && rv.Kind() != reflect.Interface {
+		panic("something unimplemented")
+	}
+	rv.Set(reflect.ValueOf(e.reader.ReadLengthString()))
+}
+
+func (e *Decoder) readBit(rv reflect.Value) {
+	if rv.Kind() != reflect.Bool && rv.Kind() != reflect.Interface {
+		panic("something unimplemented")
+	}
+	b := e.reader.ReadByte()
+	var value bool
+	switch b {
+	case 0:
+		value = false
+	case 1:
+		value = true
+	default:
+		e.appendErrorf("expected bit which is either 0 or 1, found: %d", b)
+		return
+	}
+	if rv.Kind() == reflect.Bool {
+		rv.SetBool(value)
+	} else {
+		rv.Set(reflect.ValueOf(value))
+	}
+}
+
+func (e *Decoder) readInt(rv reflect.Value) {
+	value := e.reader.ReadInt64()
+	if isSignedKind(rv.Kind()) {
+		rv.SetInt(value)
+	} else {
+		rv.Set(reflect.ValueOf(value))
+	}
+}
+
+func (e *Decoder) readUint(rv reflect.Value) {
+	value := e.reader.ReadUint64()
+	if isUnsignedKind(rv.Kind()) {
+		rv.SetUint(value)
+	} else {
+		rv.Set(reflect.ValueOf(value))
+	}
+}
+
+func (e *Decoder) readRune(rv reflect.Value) {
+	rv.Set(reflect.ValueOf(e.reader.ReadRune()))
+}
+
+func (e *Decoder) readEnum(tt sixty.Enum, rv reflect.Value) {
+	n := e.reader.ReadUint64()
+	if n >= uint64(len(tt.Values)) {
+		e.appendErrorf("found %d'th enum value while there are only %d of them", n, len(tt.Values))
+		return
+	}
+	if isUnsignedKind(rv.Kind()) {
+		rv.SetUint(n)
+	} else {
+		rv.Set(reflect.ValueOf(uint(n)))
+	}
+}
+
+func (e *Decoder) readEnumInt(tt sixty.EnumInt, rv reflect.Value) {
+	n := e.reader.ReadUint64()
+	if isSignedKind(rv.Kind()) {
+		rv.SetInt(int64(n) + tt.Min)
+	} else {
+		rv.Set(reflect.ValueOf(int64(n) + tt.Min))
+	}
+}
+
+func (e *Decoder) readProduct(tt sixty.Product, rv reflect.Value) {
+	if rv.Kind() != reflect.Struct {
+		panic("something unimplemented")
+	}
+	for i, x := range tt {
+		e.Read(x.Schema, rv.Field(i))
+	}
+}
+
+func (e *Decoder) readCoproduct(tt sixty.Coproduct, rv reflect.Value) {
+	if rv.Kind() != reflect.Interface {
+		panic("something unimplemented")
+	}
+	variant := e.reader.ReadUint64()
+	e.Read(tt[variant].Schema, rv)
+}
+
+func (e *Decoder) readList(tt sixty.List, rv reflect.Value) {
+	if rv.Kind() != reflect.Slice {
+		panic("something unimplemented")
+	}
+	lst := reflect.MakeSlice(rv.Type(), 0, 0)
+	hasNext := e.reader.ReadByte()
+	for hasNext == 1 {
+		x := reflect.New(rv.Type().Elem()).Elem()
+		e.Read(tt.Schema, x)
+		lst = reflect.Append(lst, x)
+		hasNext = e.reader.ReadByte()
+	}
+	rv.Set(lst)
+}
+
+func (e *Decoder) readArray(tt sixty.Array, rv reflect.Value) {
+	if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
+		panic("something unimplemented")
+	}
+	var lst reflect.Value
+	if rv.Kind() == reflect.Array {
+		lst = reflect.New(rv.Type()).Elem()
+	} else {
+		lst = reflect.MakeSlice(rv.Type(), int(tt.Count), int(tt.Count))
+	}
+	for i := uint(0); i < tt.Count; i++ {
+		e.Read(tt.Schema, lst.Index(int(i)))
+	}
+	rv.Set(lst)
+}
+
+func (e *Decoder) readOptional(tt sixty.Optional, rv reflect.Value) {
+	isPresent := e.reader.ReadByte()
+	switch isPresent {
+	case 0:
+		rv.Set(reflect.Zero(rv.Type()))
+	case 1:
+		if rv.Kind() == reflect.Pointer {
+			rv.Set(reflect.New(rv.Type().Elem()))
+			e.Read(tt.Schema, rv.Elem())
+		} else {
+			e.Read(tt.Schema, rv)
+		}
+	default:
+		e.appendErrorf("option variant must be either 0 or 1, but it is %d", isPresent)
 	}
 }
 

@@ -50,29 +50,25 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
 		e.writer.WriteRune('{')
 		e.writer.WriteString(strconv.FormatUint(uint64(vv.Variant), 10))
-		e.writer.WriteString(`":`)
+		e.writer.WriteString(":")
 		e.Write(tt[vv.Variant].Schema, vv.SchemaValue)
 		e.writer.WriteRune('}')
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.writer.WriteRune('[')
-		i := 0
-	iter_list:
-		e.Write(tt.Schema, vv[i])
-		if i < len(vv)-1 {
-			i++
-			e.writer.WriteRune(',')
-			goto iter_list
+		for i, x := range vv {
+			if i > 0 {
+				e.writer.WriteRune(',')
+			}
+			e.Write(tt.Schema, x)
 		}
 		e.writer.WriteRune(']')
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Array, sixty.ArrayValue](t, v); ok {
 		e.writer.WriteRune('[')
-		i := uint(0)
-	iter_array:
-		e.Write(tt.Schema, vv[i])
-		if i < tt.Count-1 {
-			i++
-			e.writer.WriteRune(',')
-			goto iter_array
+		for i := uint(0); i < tt.Count; i++ {
+			if i > 0 {
+				e.writer.WriteRune(',')
+			}
+			e.Write(tt.Schema, vv[i])
 		}
 		e.writer.WriteRune(']')
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Optional, sixty.OptionalValue](t, v); ok {

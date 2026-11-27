@@ -31,3 +31,13 @@ func TestBttvDBEncode(t *testing.T) {
   },
 ]`, got)
 }
+
+func TestBttvDBEncodeDecode(t *testing.T) {
+	t.Parallel()
+
+	encoded, err := pretty.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	assert.NoError(t, err)
+	got, err := pretty.Decode(internal.BttvEmotesDBSchema, encoded)
+	assert.NoError(t, err)
+	assert.Equal(t, internal.BttvEmotesDBData, got)
+}

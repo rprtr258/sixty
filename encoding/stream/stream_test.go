@@ -73,3 +73,27 @@ func TestDecode_Coproduct(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, s(int64(42)), got)
 }
+
+func TestDecode_ArrayAndOptional(t *testing.T) {
+	t.Parallel()
+
+	type s struct {
+		Arr  [2]uint64
+		Opt  *string
+		Opt2 *int64
+	}
+
+	var got s
+	err := stream.Decode(sixty.Product{
+		{"arr", sixty.Array{Schema: sixty.Uint{}, Count: 2}},
+		{"opt", sixty.Optional{Schema: sixty.String{}}},
+		{"opt2", sixty.Optional{Schema: sixty.Int{}}},
+	}, []byte{0x01, 0x02, 0x01, 0x01, 0x78, 0x00}, &got)
+	assert.NoError(t, err)
+	opt := "x"
+	assert.Equal(t, s{
+		Arr:  [2]uint64{1, 2},
+		Opt:  &opt,
+		Opt2: nil,
+	}, got)
+}
