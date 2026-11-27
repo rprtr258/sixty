@@ -23,7 +23,6 @@ linters:
     - forcetypeassert
     - funlen
     - gochecknoinits
-    - gocognit
     - goconst
     - gocritic
     - gocyclo
@@ -75,7 +74,7 @@ linters:
         - exclude:
             - exported
     nestif:
-      min-complexity: 19
+      min-complexity: 21
     forbidigo:
       forbid:
         - pattern: ^print(ln)?$

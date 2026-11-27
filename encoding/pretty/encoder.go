@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/rprtr258/sixty"
-	"github.com/rprtr258/sixty/internal/stringify"
 )
 
 type Encoder struct {
@@ -22,7 +21,11 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 		e.writer.WriteString(strings.ReplaceAll(string(vv), "\"", "\"\""))
 		e.writer.WriteRune('"')
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Bit, sixty.BitValue](t, v); ok {
-		e.writer.WriteString(stringify.BoolToText(vv))
+		if vv {
+			e.writer.WriteString("true")
+		} else {
+			e.writer.WriteString("false")
+		}
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Int, sixty.IntValue](t, v); ok {
 		e.writer.WriteString(strconv.FormatInt(int64(vv), 10))
 	} else if _, vv, ok := sixty.AssertSchemas[sixty.Uint, sixty.UintValue](t, v); ok {
