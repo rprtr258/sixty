@@ -1,17 +1,17 @@
-package sixty_test
+package size_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/rprtr258/sixty"
 	"github.com/rprtr258/sixty/internal"
+	"github.com/rprtr258/sixty/schema/size"
 )
 
 func TestBttvDB(t *testing.T) {
 	t.Parallel()
 
-	got := sixty.SchemaSize(internal.BttvEmotesDBSchema)
-	assert.Equal(t, sixty.Inf, got)
+	got := size.SchemaSize(internal.BttvEmotesDBSchema)
+	assert.Equal(t, size.Inf, got)
 }

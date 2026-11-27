@@ -1,8 +1,10 @@
-package sixty
+package size
 
 import (
 	"math/bits"
 	"strconv"
+
+	"github.com/rprtr258/sixty"
 )
 
 // Size is either size of struct value (>= 0) or infinity (really -1).
@@ -35,29 +37,29 @@ func (x Size) String() string {
 	return strconv.Itoa(int(x))
 }
 
-func SchemaSize(t Schema) Size {
+func SchemaSize(t sixty.Schema) Size {
 	switch tt := t.(type) {
-	case String:
+	case sixty.String:
 		return Inf
-	case Bit:
+	case sixty.Bit:
 		return 1
-	case Int:
+	case sixty.Int:
 		return Inf
-	case Uint:
+	case sixty.Uint:
 		return Inf
-	case Rune:
+	case sixty.Rune:
 		return Inf
-	case Enum:
+	case sixty.Enum:
 		return log2(uint64(len(tt.Values)))
-	case EnumInt:
+	case sixty.EnumInt:
 		return log2(uint64(tt.Max - tt.Min))
-	case Product:
+	case sixty.Product:
 		sum := Size(0)
 		for _, x := range tt {
 			sum.Add(SchemaSize(x.Schema))
 		}
 		return sum
-	case Coproduct:
+	case sixty.Coproduct:
 		max := Size(0)
 		for _, x := range tt {
 			xSize := SchemaSize(x.Schema)
@@ -67,11 +69,11 @@ func SchemaSize(t Schema) Size {
 		}
 		max.Add(log2(uint64(len(tt))))
 		return max
-	case List:
+	case sixty.List:
 		return Inf
-	case Array:
+	case sixty.Array:
 		return SchemaSize(tt.Schema).Multiply(tt.Count)
-	case Optional:
+	case sixty.Optional:
 		return 1 + SchemaSize(tt.Schema)
 	default:
 		panic("something unimplemented")
