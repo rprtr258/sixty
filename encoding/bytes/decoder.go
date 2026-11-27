@@ -7,16 +7,16 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-type Decoder struct {
+type decoder struct {
 	reader sixty.Reader
 }
 
 // TODO: error handling.
-func (e *Decoder) appendErrorf(format string, args ...any) {
+func (e *decoder) appendErrorf(format string, args ...any) {
 	panic(fmt.Sprintf("error at position %d: ", e.reader.Pos()) + fmt.Sprintf(format, args...))
 }
 
-func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
+func (e *decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	switch tt := t.(type) {
 	case sixty.String:
 		stringLength := e.reader.ReadUint64()
@@ -96,9 +96,9 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	return nil
 }
 
-func Decode(t sixty.Schema, data []byte) (sixty.SchemaValue, error) {
+func decode(t sixty.Schema, data []byte) (sixty.SchemaValue, error) {
 	buffer := bytes.NewBuffer(data)
-	decoder := Decoder{reader: sixty.NewReader(buffer)}
+	decoder := decoder{sixty.NewReader(buffer)}
 	res := decoder.Read(t)
 	return res, decoder.reader.Error
 }

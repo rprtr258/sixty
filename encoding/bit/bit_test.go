@@ -20,7 +20,7 @@ var bttvEmotesDBBits = []byte{
 func TestBttvDBDecode(t *testing.T) {
 	t.Parallel()
 
-	got, err := bit.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBBits)
+	got, err := bit.Codec.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBBits)
 	require.NoError(t, err)
 	require.Equal(t, internal.BttvEmotesDBData, got)
 }
@@ -28,7 +28,7 @@ func TestBttvDBDecode(t *testing.T) {
 func TestBttvDBEncode(t *testing.T) {
 	t.Parallel()
 
-	got, err := bit.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	got, err := bit.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
 	require.NoError(t, err)
 	require.Equal(t, bttvEmotesDBBits, got)
 }
@@ -58,7 +58,7 @@ func TestRoundTripAllTypes(t *testing.T) {
 		{sixty.String{}, sixty.StringValue("Kappa")},
 	}
 	for _, test := range testCases {
-		require.Equal(t, test.value, internal.RoundTrip(t, test.schema, test.value, bit.Encode, bit.Decode), "schema %T", test.schema)
+		require.Equal(t, test.value, internal.RoundTrip(t, test.schema, test.value, bit.Codec), "schema %T", test.schema)
 	}
 }
 
@@ -66,7 +66,7 @@ func TestDecodeOptionalPresent(t *testing.T) {
 	t.Parallel()
 
 	// marker byte 0x01 (present) + zigzag(42)=84 in unary format: 111111 0 1010100
-	got, err := bit.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x01, 0xFD, 0x50})
+	got, err := bit.Codec.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x01, 0xFD, 0x50})
 	require.NoError(t, err)
 	require.Equal(t, sixty.OptionalValue{SchemaValue: sixty.IntValue(42), IsValid: true}, got)
 }
@@ -75,7 +75,7 @@ func TestDecodeCoproduct(t *testing.T) {
 	t.Parallel()
 
 	// variant tag "00" (variant 0 of 2) + zigzag(42)=84 unary: 111111 0 1010100
-	got, err := bit.Decode(
+	got, err := bit.Codec.Decode(
 		sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}},
 		[]byte{0x3F, 0x54},
 	)
@@ -94,7 +94,7 @@ func TestCoproductRoundTrip(t *testing.T) {
 		{SchemaValue: sixty.IntValue(42), Variant: 0},
 		{SchemaValue: sixty.StringValue("hi"), Variant: 1},
 	} {
-		require.Equal(t, test, internal.RoundTrip(t, schema, test, bit.Encode, bit.Decode))
+		require.Equal(t, test, internal.RoundTrip(t, schema, test, bit.Codec))
 	}
 }
 
@@ -103,7 +103,7 @@ func TestDecodeEnumOutOfRangePanics(t *testing.T) {
 
 	// 2-bit tag "11" = 3 while enum has only 3 values (indices 0..2)
 	require.Panics(t, func() {
-		_, _ = bit.Decode(sixty.Enum{Values: []string{"a", "b", "c"}}, []byte{0xC0})
+		_, _ = bit.Codec.Decode(sixty.Enum{Values: []string{"a", "b", "c"}}, []byte{0xC0})
 	})
 }
 
@@ -111,14 +111,14 @@ func TestDecodeOptionalInvalidMarkerPanics(t *testing.T) {
 	t.Parallel()
 
 	require.Panics(t, func() {
-		_, _ = bit.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x02})
+		_, _ = bit.Codec.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x02})
 	})
 }
 
 func TestDecodeTruncated(t *testing.T) {
 	t.Parallel()
 
-	_, err := bit.Decode(sixty.String{}, []byte{})
+	_, err := bit.Codec.Decode(sixty.String{}, []byte{})
 	require.Error(t, err)
 }
 
@@ -128,7 +128,7 @@ func TestDecodeTruncated(t *testing.T) {
 func TestEncodeOptionalPresent(t *testing.T) {
 	t.Parallel()
 
-	data, err := bit.Encode(sixty.Optional{Schema: sixty.Int{}},
+	data, err := bit.Codec.Encode(sixty.Optional{Schema: sixty.Int{}},
 		sixty.OptionalValue{SchemaValue: sixty.IntValue(42), IsValid: true})
 	require.NoError(t, err)
 	// absent-marker bit 0 + present-marker bit 1 + zigzag(42)=84 unary

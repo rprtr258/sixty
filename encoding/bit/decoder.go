@@ -9,12 +9,12 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-type Decoder struct {
+type decoder struct {
 	buffer *bitio.CountReader
 }
 
 // TODO: compare encodings, choose efficient.
-func (e *Decoder) readUint() uint64 {
+func (e *decoder) readUint() uint64 {
 	n := 1
 	for e.buffer.TryReadBool() {
 		n++
@@ -23,16 +23,16 @@ func (e *Decoder) readUint() uint64 {
 	return res
 }
 
-func (e *Decoder) readInt() int64 {
+func (e *decoder) readInt() int64 {
 	return sixty.FromZigZag(e.readUint())
 }
 
 // TODO: error handling.
-func (e *Decoder) appendErrorf(format string, args ...any) {
+func (e *decoder) appendErrorf(format string, args ...any) {
 	panic(fmt.Sprintf("error at position %d: ", e.buffer.BitsCount) + fmt.Sprintf(format, args...))
 }
 
-func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
+func (e *decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	switch tt := t.(type) {
 	case sixty.String:
 		stringLength := e.readUint()
@@ -103,10 +103,10 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	return nil
 }
 
-func Decode(t sixty.Schema, data []byte) (sixty.SchemaValue, error) {
+func decode(t sixty.Schema, data []byte) (sixty.SchemaValue, error) {
 	buffer := bytes.NewBuffer(data)
 	reader := bitio.NewCountReader(buffer)
-	decoder := Decoder{buffer: reader}
+	decoder := decoder{buffer: reader}
 	res := decoder.Read(t)
 	return res, reader.TryError
 }

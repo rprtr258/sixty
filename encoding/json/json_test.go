@@ -58,7 +58,7 @@ var (
 func TestBttvDBEncode(t *testing.T) {
 	t.Parallel()
 
-	got, err := json.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	got, err := json.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
 	require.NoError(t, err)
 	require.Equal(t, bttvEmotesDBJson, got)
 }
@@ -66,7 +66,7 @@ func TestBttvDBEncode(t *testing.T) {
 func TestBttvDBDecode(t *testing.T) {
 	t.Parallel()
 
-	got, err := json.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBJson)
+	got, err := json.Codec.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBJson)
 	require.NoError(t, err)
 	require.Equal(t, internal.BttvEmotesDBData, got)
 }
@@ -76,9 +76,9 @@ func TestAllTypesEncodeDecode(t *testing.T) {
 
 	schema := allTypesSchema
 	data := allTypesValue
-	enc, err := json.Encode(schema, data)
+	enc, err := json.Codec.Encode(schema, data)
 	require.NoError(t, err)
-	dec, err := json.Decode(schema, enc)
+	dec, err := json.Codec.Decode(schema, enc)
 	require.NoError(t, err)
 	require.Equal(t, dec, data)
 }
@@ -97,7 +97,7 @@ func (unsupportedSchema) Kind() sixty.Kind { return sixty.BitKind }
 func TestDecodeUnsupportedSchema(t *testing.T) {
 	t.Parallel()
 
-	_, err := json.Decode(unsupportedSchema{}, "true")
+	_, err := json.Codec.Decode(unsupportedSchema{}, "true")
 	require.EqualError(t, err, "error at position 0: unsupported schema type json_test.unsupportedSchema")
 }
 
@@ -105,7 +105,7 @@ func TestDecodeEmptyInput(t *testing.T) {
 	t.Parallel()
 
 	// eof while expecting '[' triggers both the eof and the unshift-at-start errors
-	_, err := json.Decode(sixty.List{Schema: sixty.Bit{}}, "")
+	_, err := json.Codec.Decode(sixty.List{Schema: sixty.Bit{}}, "")
 	require.ErrorContains(t, err, "unexpected eof")
 	require.ErrorContains(t, err, "trying to unshift at start")
 }
@@ -113,7 +113,7 @@ func TestDecodeEmptyInput(t *testing.T) {
 func TestDecodeTrailingGarbage(t *testing.T) {
 	t.Parallel()
 
-	_, err := json.Decode(sixty.Int{}, "1 2")
+	_, err := json.Codec.Decode(sixty.Int{}, "1 2")
 	require.ErrorContains(t, err, "expected eof, found 2")
 }
 
@@ -135,7 +135,7 @@ func TestDecodePrimitiveErrors(t *testing.T) {
 		{sixty.EnumInt{}, `"x"`, `expected enum int, found "x"`},
 	}
 	for _, test := range testCases {
-		_, err := json.Decode(test.schema, test.data)
+		_, err := json.Codec.Decode(test.schema, test.data)
 		require.ErrorContains(t, err, test.reason, "schema %T data %s", test.schema, test.data)
 	}
 }
@@ -158,7 +158,7 @@ func TestDecodeProductErrors(t *testing.T) {
 		{`{"a":"x","b":2}`, errExpectedIntQuoted},
 	}
 	for _, test := range testCases {
-		_, err := json.Decode(schema, test.data)
+		_, err := json.Codec.Decode(schema, test.data)
 		require.ErrorContains(t, err, test.reason, "data %s", test.data)
 	}
 }
@@ -181,7 +181,7 @@ func TestDecodeCoproductErrors(t *testing.T) {
 		{`{"0":"x"}`, errExpectedIntQuoted},
 	}
 	for _, test := range testCases {
-		_, err := json.Decode(schema, test.data)
+		_, err := json.Codec.Decode(schema, test.data)
 		require.ErrorContains(t, err, test.reason, "data %s", test.data)
 	}
 }
@@ -199,12 +199,12 @@ func TestDecodeListErrors(t *testing.T) {
 		{"[x]", errExpectedIntBare},
 	}
 	for _, test := range testCases {
-		_, err := json.Decode(schema, test.data)
+		_, err := json.Codec.Decode(schema, test.data)
 		require.ErrorContains(t, err, test.reason, "data %s", test.data)
 	}
 
 	// trailing comma is tolerated
-	got, err := json.Decode(schema, "[1,]")
+	got, err := json.Codec.Decode(schema, "[1,]")
 	require.NoError(t, err)
 	require.Equal(t, sixty.ListValue{sixty.IntValue(1)}, got)
 }
@@ -223,7 +223,7 @@ func TestDecodeArrayErrors(t *testing.T) {
 		{"[x,x]", errExpectedIntBare},
 	}
 	for _, test := range testCases {
-		_, err := json.Decode(schema, test.data)
+		_, err := json.Codec.Decode(schema, test.data)
 		require.ErrorContains(t, err, test.reason, "data %s", test.data)
 	}
 }
@@ -231,14 +231,14 @@ func TestDecodeArrayErrors(t *testing.T) {
 func TestDecodeOptionalError(t *testing.T) {
 	t.Parallel()
 
-	_, err := json.Decode(sixty.Optional{Schema: sixty.Int{}}, "x")
+	_, err := json.Codec.Decode(sixty.Optional{Schema: sixty.Int{}}, "x")
 	require.ErrorContains(t, err, errExpectedIntBare)
 }
 
 func TestDecodeEmptyProductSchema(t *testing.T) {
 	t.Parallel()
 
-	got, err := json.Decode(sixty.Product{}, "{}")
+	got, err := json.Codec.Decode(sixty.Product{}, "{}")
 	require.NoError(t, err)
 	require.Equal(t, sixty.ProductValue{}, got)
 }
@@ -246,6 +246,6 @@ func TestDecodeEmptyProductSchema(t *testing.T) {
 func TestDecodeArrayMalformedOpen(t *testing.T) {
 	t.Parallel()
 
-	_, err := json.Decode(sixty.Array{Schema: sixty.Int{}, Count: 1}, "1")
+	_, err := json.Codec.Decode(sixty.Array{Schema: sixty.Int{}, Count: 1}, "1")
 	require.ErrorContains(t, err, `expected "["`)
 }

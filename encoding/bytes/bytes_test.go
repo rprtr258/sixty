@@ -25,7 +25,7 @@ var bttvEmotesDBBytes = []byte{
 func TestBttvDBDecode(t *testing.T) {
 	t.Parallel()
 
-	got, err := bytes.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBBytes)
+	got, err := bytes.Codec.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBBytes)
 	require.NoError(t, err)
 	require.Equal(t, internal.BttvEmotesDBData, got)
 }
@@ -33,7 +33,7 @@ func TestBttvDBDecode(t *testing.T) {
 func TestBttvDBEncode(t *testing.T) {
 	t.Parallel()
 
-	got, err := bytes.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	got, err := bytes.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
 	require.NoError(t, err)
 	require.Equal(t, bttvEmotesDBBytes, got)
 }
@@ -63,7 +63,7 @@ func TestRoundTripAllTypes(t *testing.T) {
 		{sixty.String{}, sixty.StringValue("κ산☺")}, // rune-count prefix, multi-byte payload
 	}
 	for _, test := range testCases {
-		require.Equal(t, test.value, internal.RoundTrip(t, test.schema, test.value, bytes.Encode, bytes.Decode), "schema %T", test.schema)
+		require.Equal(t, test.value, internal.RoundTrip(t, test.schema, test.value, bytes.Codec), "schema %T", test.schema)
 	}
 }
 
@@ -71,7 +71,7 @@ func TestDecodeInvalidBitPanics(t *testing.T) {
 	t.Parallel()
 
 	require.Panics(t, func() {
-		_, _ = bytes.Decode(sixty.Bit{}, []byte{0x02})
+		_, _ = bytes.Codec.Decode(sixty.Bit{}, []byte{0x02})
 	})
 }
 
@@ -79,7 +79,7 @@ func TestDecodeEnumOutOfRangePanics(t *testing.T) {
 	t.Parallel()
 
 	require.Panics(t, func() {
-		_, _ = bytes.Decode(sixty.Enum{Values: []string{"a", "b"}}, []byte{0x02})
+		_, _ = bytes.Codec.Decode(sixty.Enum{Values: []string{"a", "b"}}, []byte{0x02})
 	})
 }
 
@@ -87,6 +87,6 @@ func TestDecodeOptionalInvalidMarkerPanics(t *testing.T) {
 	t.Parallel()
 
 	require.Panics(t, func() {
-		_, _ = bytes.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x02})
+		_, _ = bytes.Codec.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x02})
 	})
 }

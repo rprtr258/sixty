@@ -500,9 +500,9 @@ func TestRoundTrip(t *testing.T) {
 	}} {
 		enc, err := common.Encode(schema, data)
 		require.NoError(t, err)
-		encBytes, err := bytes.Encode(schema, enc)
+		encBytes, err := bytes.Codec.Encode(schema, enc)
 		require.NoError(t, err)
-		decValue, err := bytes.Decode(schema, encBytes)
+		decValue, err := bytes.Codec.Decode(schema, encBytes)
 		require.NoError(t, err)
 		var dec sample
 		err = common.Decode(schema, decValue, &dec)

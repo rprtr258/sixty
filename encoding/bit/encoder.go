@@ -10,11 +10,11 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-type Encoder struct {
+type encoder struct {
 	buffer *bitio.Writer
 }
 
-func (e *Encoder) writeUint(x uint64) {
+func (e *encoder) writeUint(x uint64) {
 	n := bits.Len64(x)
 	for i := 1; i < n; i++ {
 		e.buffer.TryWriteBool(true)
@@ -23,11 +23,11 @@ func (e *Encoder) writeUint(x uint64) {
 	e.buffer.TryWriteBits(x, uint8(n))
 }
 
-func (e *Encoder) writeInt(x int64) {
+func (e *encoder) writeInt(x int64) {
 	e.writeUint(sixty.ToZigZag(x))
 }
 
-func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
+func (e *encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
 		e.writeUint(uint64(len(vv)))
 		e.buffer.TryWrite([]byte(vv))
@@ -75,12 +75,10 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	}
 }
 
-func Encode(t sixty.Schema, v sixty.SchemaValue) ([]byte, error) {
+func encode(t sixty.Schema, v sixty.SchemaValue) ([]byte, error) {
 	var buffer bytes.Buffer
 	writer := bitio.NewWriter(&buffer)
-	encoder := Encoder{
-		buffer: writer,
-	}
+	encoder := encoder{writer}
 	encoder.Write(t, v)
 	writer.TryAlign()
 	return buffer.Bytes(), writer.TryError

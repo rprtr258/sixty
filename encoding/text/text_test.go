@@ -54,7 +54,7 @@ var (
 func TestBttvDBEncode(t *testing.T) {
 	t.Parallel()
 
-	got, err := text.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	got, err := text.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
 	require.NoError(t, err)
 	require.Equal(t, `[{"Kappa",["KappaOwner1","KappaOwner2"]},{"PogChamp",["PogChampOwner1","PogChampOwner2"]}]`, got)
 }
@@ -64,7 +64,7 @@ func TestBttvDBDecode(t *testing.T) {
 
 	bttvEmotesDBText := `[{"Kappa",["KappaOwner1","KappaOwner2"]},
 		{"PogChamp",["PogChampOwner1","PogChampOwner2"]}]`
-	got, err := text.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBText)
+	got, err := text.Codec.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBText)
 	require.NoError(t, err)
 	require.Equal(t, internal.BttvEmotesDBData, got)
 }
@@ -74,9 +74,9 @@ func TestBttvDBEncodeDecode(t *testing.T) {
 
 	schema := internal.BttvEmotesDBSchema
 	data := internal.BttvEmotesDBData
-	enc, err := text.Encode(schema, data)
+	enc, err := text.Codec.Encode(schema, data)
 	require.NoError(t, err)
-	dec, err := text.Decode(schema, enc)
+	dec, err := text.Codec.Decode(schema, enc)
 	require.NoError(t, err)
 	require.Equal(t, dec, data)
 }
@@ -86,9 +86,9 @@ func TestAllTypesEncodeDecode(t *testing.T) {
 
 	schema := allTypesSchema
 	data := allTypesValue
-	enc, err := text.Encode(schema, data)
+	enc, err := text.Codec.Encode(schema, data)
 	require.NoError(t, err)
-	dec, err := text.Decode(schema, enc)
+	dec, err := text.Codec.Decode(schema, enc)
 	require.NoError(t, err)
 	require.Equal(t, dec, data)
 }
@@ -96,14 +96,14 @@ func TestAllTypesEncodeDecode(t *testing.T) {
 func TestDecodeGarbage(t *testing.T) {
 	t.Parallel()
 
-	_, err := text.Decode(internal.BttvEmotesDBSchema, "garbage")
+	_, err := text.Codec.Decode(internal.BttvEmotesDBSchema, "garbage")
 	require.Error(t, err)
 }
 
 func TestEncodeRuneQuoteEscape(t *testing.T) {
 	t.Parallel()
 
-	got, err := text.Encode(sixty.Rune{}, sixty.RuneValue('\''))
+	got, err := text.Codec.Encode(sixty.Rune{}, sixty.RuneValue('\''))
 	require.NoError(t, err)
 	require.Equal(t, `'\''`, got)
 }
@@ -122,7 +122,7 @@ func (unsupportedSchema) Kind() sixty.Kind { return sixty.BitKind }
 func TestDecodeUnsupportedSchema(t *testing.T) {
 	t.Parallel()
 
-	_, err := text.Decode(unsupportedSchema{}, "true")
+	_, err := text.Codec.Decode(unsupportedSchema{}, "true")
 	require.EqualError(t, err, "error at position 0: unsupported schema type text_test.unsupportedSchema")
 }
 
@@ -130,7 +130,7 @@ func TestDecodeEmptyInput(t *testing.T) {
 	t.Parallel()
 
 	// eof while expecting '[' triggers both the eof and the unshift-at-start errors
-	_, err := text.Decode(sixty.List{Schema: sixty.Bit{}}, "")
+	_, err := text.Codec.Decode(sixty.List{Schema: sixty.Bit{}}, "")
 	require.ErrorContains(t, err, "unexpected eof")
 	require.ErrorContains(t, err, "trying to unshift at start")
 }
@@ -138,7 +138,7 @@ func TestDecodeEmptyInput(t *testing.T) {
 func TestDecodeTrailingGarbage(t *testing.T) {
 	t.Parallel()
 
-	_, err := text.Decode(sixty.Int{}, "1 2")
+	_, err := text.Codec.Decode(sixty.Int{}, "1 2")
 	require.ErrorContains(t, err, "expected eof, found 2")
 }
 
@@ -160,7 +160,7 @@ func TestDecodePrimitiveErrors(t *testing.T) {
 		{sixty.EnumInt{}, `"x"`, `expected enum int, found "x"`},
 	}
 	for _, test := range testCases {
-		_, err := text.Decode(test.schema, test.data)
+		_, err := text.Codec.Decode(test.schema, test.data)
 		require.ErrorContains(t, err, test.reason, "schema %T data %s", test.schema, test.data)
 	}
 }
@@ -181,12 +181,12 @@ func TestDecodeProductErrors(t *testing.T) {
 		{"{x,2}", errExpectedIntBare},
 	}
 	for _, test := range testCases {
-		_, err := text.Decode(schema, test.data)
+		_, err := text.Codec.Decode(schema, test.data)
 		require.ErrorContains(t, err, test.reason, "data %s", test.data)
 	}
 
 	// trailing comma tolerated: pretty encoder writes it
-	got, err := text.Decode(schema, "{1,2,}")
+	got, err := text.Codec.Decode(schema, "{1,2,}")
 	require.NoError(t, err)
 	require.Equal(t, sixty.ProductValue{sixty.IntValue(1), sixty.IntValue(2)}, got)
 }
@@ -208,11 +208,11 @@ func TestDecodeCoproductErrors(t *testing.T) {
 		{"{0:1]", `expected "}", found "]"`},
 	}
 	for _, test := range testCases {
-		_, err := text.Decode(schema, test.data)
+		_, err := text.Codec.Decode(schema, test.data)
 		require.ErrorContains(t, err, test.reason, "data %s", test.data)
 	}
 
-	got, err := text.Decode(schema, "{0:5,}")
+	got, err := text.Codec.Decode(schema, "{0:5,}")
 	require.NoError(t, err)
 	require.Equal(t, sixty.CoproductValue{SchemaValue: sixty.IntValue(5), Variant: 0}, got)
 }
@@ -230,11 +230,11 @@ func TestDecodeListErrors(t *testing.T) {
 		{"[x]", errExpectedIntBare},
 	}
 	for _, test := range testCases {
-		_, err := text.Decode(schema, test.data)
+		_, err := text.Codec.Decode(schema, test.data)
 		require.ErrorContains(t, err, test.reason, "data %s", test.data)
 	}
 
-	got, err := text.Decode(schema, "[1,]")
+	got, err := text.Codec.Decode(schema, "[1,]")
 	require.NoError(t, err)
 	require.Equal(t, sixty.ListValue{sixty.IntValue(1)}, got)
 }
@@ -253,7 +253,7 @@ func TestDecodeArrayErrors(t *testing.T) {
 		{"[x,x]", errExpectedIntBare},
 	}
 	for _, test := range testCases {
-		_, err := text.Decode(schema, test.data)
+		_, err := text.Codec.Decode(schema, test.data)
 		require.ErrorContains(t, err, test.reason, "data %s", test.data)
 	}
 }
@@ -261,7 +261,7 @@ func TestDecodeArrayErrors(t *testing.T) {
 func TestDecodeRuneEscapedQuote(t *testing.T) {
 	t.Parallel()
 
-	got, err := text.Decode(sixty.Rune{}, `'\''`)
+	got, err := text.Codec.Decode(sixty.Rune{}, `'\''`)
 	require.NoError(t, err)
 	require.Equal(t, sixty.RuneValue('\''), got)
 }
@@ -269,13 +269,13 @@ func TestDecodeRuneEscapedQuote(t *testing.T) {
 func TestDecodeArrayMalformedOpen(t *testing.T) {
 	t.Parallel()
 
-	_, err := text.Decode(sixty.Array{Schema: sixty.Int{}, Count: 1}, "1")
+	_, err := text.Codec.Decode(sixty.Array{Schema: sixty.Int{}, Count: 1}, "1")
 	require.ErrorContains(t, err, `expected "["`)
 }
 
 func TestDecodeOptionalError(t *testing.T) {
 	t.Parallel()
 
-	_, err := text.Decode(sixty.Optional{Schema: sixty.Int{}}, "x")
+	_, err := text.Codec.Decode(sixty.Optional{Schema: sixty.Int{}}, "x")
 	require.ErrorContains(t, err, "expected int, found x")
 }

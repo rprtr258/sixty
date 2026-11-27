@@ -8,20 +8,18 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-// RoundTrip encodes value with schema and decodes it back with the given
-// encoder/decoder pair; both operate on the same data type T.
+// RoundTrip encodes value with schema and decodes it back with codec.
 func RoundTrip[T any](
 	t *testing.T,
 	schema sixty.Schema,
 	value sixty.SchemaValue,
-	encode func(sixty.Schema, sixty.SchemaValue) (T, error),
-	decode func(sixty.Schema, T) (sixty.SchemaValue, error),
+	codec sixty.Codec[T],
 ) sixty.SchemaValue {
 	t.Helper()
 
-	data, err := encode(schema, value)
+	data, err := codec.Encode(schema, value)
 	require.NoError(t, err)
-	got, err := decode(schema, data)
+	got, err := codec.Decode(schema, data)
 	require.NoError(t, err)
 	return got
 }

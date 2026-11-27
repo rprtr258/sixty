@@ -7,11 +7,11 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-type Encoder struct {
+type encoder struct {
 	Buffer sixty.Writer
 }
 
-func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
+func (e *encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
 		e.Buffer.WriteRune('"')
 		e.Buffer.WriteString(string(vv))
@@ -81,9 +81,9 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	}
 }
 
-func Encode(t sixty.Schema, v sixty.SchemaValue) (string, error) {
+func encode(t sixty.Schema, v sixty.SchemaValue) (string, error) {
 	buffer := bytes.Buffer{}
-	encoder := Encoder{Buffer: sixty.NewWriter(&buffer)}
+	encoder := encoder{Buffer: sixty.NewWriter(&buffer)}
 	encoder.Write(t, v)
 	return buffer.String(), encoder.Buffer.Error
 }

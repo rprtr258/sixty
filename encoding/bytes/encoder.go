@@ -7,11 +7,11 @@ import (
 	"github.com/rprtr258/sixty"
 )
 
-type Encoder struct {
+type encoder struct {
 	writer sixty.Writer
 }
 
-func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
+func (e *encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
 		// length prefix counts runes, not bytes, to match ReadRune-based decoding
 		e.writer.WriteUint64(uint64(utf8.RuneCountInString(string(vv))))
@@ -60,11 +60,9 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	}
 }
 
-func Encode(t sixty.Schema, v sixty.SchemaValue) ([]byte, error) {
+func encode(t sixty.Schema, v sixty.SchemaValue) ([]byte, error) {
 	var buffer bytes.Buffer
-	encoder := Encoder{
-		writer: sixty.NewWriter(&buffer),
-	}
+	encoder := encoder{sixty.NewWriter(&buffer)}
 	encoder.Write(t, v)
 	return buffer.Bytes(), encoder.writer.Error
 }

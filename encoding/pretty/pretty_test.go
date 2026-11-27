@@ -13,7 +13,7 @@ import (
 func TestBttvDBEncode(t *testing.T) {
 	t.Parallel()
 
-	got, err := pretty.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
+	got, err := pretty.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
 	require.NoError(t, err)
 	require.Equal(t, `[
   {
@@ -38,9 +38,9 @@ func TestBttvDBEncodeDecode(t *testing.T) {
 
 	schema := internal.BttvEmotesDBSchema
 	data := internal.BttvEmotesDBData
-	enc, err := pretty.Encode(schema, data)
+	enc, err := pretty.Codec.Encode(schema, data)
 	require.NoError(t, err)
-	dec, err := pretty.Decode(schema, enc)
+	dec, err := pretty.Codec.Decode(schema, enc)
 	require.NoError(t, err)
 	require.Equal(t, dec, data)
 }
@@ -50,10 +50,10 @@ func TestRuneQuoteEscape(t *testing.T) {
 
 	schema := sixty.Rune{}
 	data := sixty.RuneValue('\'')
-	enc, err := pretty.Encode(schema, data)
+	enc, err := pretty.Codec.Encode(schema, data)
 	require.NoError(t, err)
 	require.Equal(t, `'\''`, enc)
-	dec, err := pretty.Decode(schema, enc)
+	dec, err := pretty.Codec.Decode(schema, enc)
 	require.NoError(t, err)
 	require.Equal(t, dec, data)
 }
@@ -92,9 +92,9 @@ func TestAllTypesEncode(t *testing.T) {
 		sixty.ListValue{},
 		sixty.StringValue("hello world"),
 	}
-	enc, err := pretty.Encode(schema, data)
+	enc, err := pretty.Codec.Encode(schema, data)
 	require.NoError(t, err)
-	dec, err := pretty.Decode(schema, enc)
+	dec, err := pretty.Codec.Decode(schema, enc)
 	require.NoError(t, err)
 	require.Equal(t, dec, data)
 }

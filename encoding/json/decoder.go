@@ -24,7 +24,7 @@ func (e ParseError) Error() string {
 	return fmt.Sprintf("error at position %d: %s", e.Pos, e.Reason)
 }
 
-type Decoder struct {
+type decoder struct {
 	source string
 	tokens []string
 	// starts - byte offset of every token inside source
@@ -36,18 +36,7 @@ type Decoder struct {
 	Error error
 }
 
-func newDecoder(data string) *Decoder {
-	locations := TokenRegex.FindAllStringIndex(data, -1)
-	tokens := make([]string, len(locations))
-	starts := make([]int, len(locations))
-	for i, location := range locations {
-		tokens[i] = data[location[0]:location[1]]
-		starts[i] = location[0]
-	}
-	return &Decoder{source: data, tokens: tokens, starts: starts}
-}
-
-func (d *Decoder) appendErrorf(format string, args ...any) {
+func (d *decoder) appendErrorf(format string, args ...any) {
 	multierr.AppendInto(&d.Error, ParseError{
 		Pos:    d.pos,
 		Reason: fmt.Sprintf(format, args...),
@@ -55,7 +44,7 @@ func (d *Decoder) appendErrorf(format string, args ...any) {
 }
 
 // shift returns the next token and moves the reader forward.
-func (d *Decoder) shift() string {
+func (d *decoder) shift() string {
 	if d.index == len(d.tokens) {
 		d.pos = uint(len(d.source))
 		d.appendErrorf("unexpected eof")
@@ -68,7 +57,7 @@ func (d *Decoder) shift() string {
 }
 
 // unshift moves the reader one token back.
-func (d *Decoder) unshift() {
+func (d *decoder) unshift() {
 	if d.index == 0 {
 		d.appendErrorf("trying to unshift at start")
 		return
@@ -77,7 +66,7 @@ func (d *Decoder) unshift() {
 	d.pos = uint(d.starts[d.index])
 }
 
-func (d *Decoder) expect(expected string) {
+func (d *decoder) expect(expected string) {
 	token := d.shift()
 	if token != expected {
 		d.appendErrorf("expected %q, found %q", expected, token)
@@ -85,7 +74,7 @@ func (d *Decoder) expect(expected string) {
 	}
 }
 
-func (d *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
+func (d *decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	if d.Error != nil {
 		return nil
 	}
@@ -120,7 +109,7 @@ func (d *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	}
 }
 
-func (d *Decoder) readString() sixty.StringValue {
+func (d *decoder) readString() sixty.StringValue {
 	token := d.shift()
 	value, err := strconv.Unquote(token)
 	if err != nil {
@@ -130,7 +119,7 @@ func (d *Decoder) readString() sixty.StringValue {
 	return sixty.StringValue(value)
 }
 
-func (d *Decoder) readBit() sixty.BitValue {
+func (d *decoder) readBit() sixty.BitValue {
 	switch token := d.shift(); token {
 	case "true":
 		return true
@@ -142,7 +131,7 @@ func (d *Decoder) readBit() sixty.BitValue {
 	}
 }
 
-func (d *Decoder) readInt() sixty.IntValue {
+func (d *decoder) readInt() sixty.IntValue {
 	token := d.shift()
 	value, err := strconv.ParseInt(token, 10, 64)
 	if err != nil {
@@ -152,7 +141,7 @@ func (d *Decoder) readInt() sixty.IntValue {
 	return sixty.IntValue(value)
 }
 
-func (d *Decoder) readUint() sixty.UintValue {
+func (d *decoder) readUint() sixty.UintValue {
 	token := d.shift()
 	value, err := strconv.ParseUint(token, 10, 64)
 	if err != nil {
@@ -162,7 +151,7 @@ func (d *Decoder) readUint() sixty.UintValue {
 	return sixty.UintValue(value)
 }
 
-func (d *Decoder) readRune() sixty.RuneValue {
+func (d *decoder) readRune() sixty.RuneValue {
 	token := d.shift()
 	value, err := strconv.Unquote(token)
 	if err != nil {
@@ -177,7 +166,7 @@ func (d *Decoder) readRune() sixty.RuneValue {
 	return sixty.RuneValue(runes[0])
 }
 
-func (d *Decoder) readEnum(tt sixty.Enum) sixty.EnumValue {
+func (d *decoder) readEnum(tt sixty.Enum) sixty.EnumValue {
 	token := d.shift()
 	for i, name := range tt.Values {
 		if name == token {
@@ -188,7 +177,7 @@ func (d *Decoder) readEnum(tt sixty.Enum) sixty.EnumValue {
 	return 0
 }
 
-func (d *Decoder) readEnumInt() sixty.EnumIntValue {
+func (d *decoder) readEnumInt() sixty.EnumIntValue {
 	token := d.shift()
 	value, err := strconv.ParseInt(token, 10, 64)
 	if err != nil {
@@ -198,7 +187,7 @@ func (d *Decoder) readEnumInt() sixty.EnumIntValue {
 	return sixty.EnumIntValue(value)
 }
 
-func (d *Decoder) readProduct(tt sixty.Product) sixty.ProductValue {
+func (d *decoder) readProduct(tt sixty.Product) sixty.ProductValue {
 	d.expect("{")
 	if d.Error != nil {
 		return nil
@@ -242,7 +231,7 @@ func (d *Decoder) readProduct(tt sixty.Product) sixty.ProductValue {
 	return res
 }
 
-func (d *Decoder) readCoproduct(tt sixty.Coproduct) sixty.CoproductValue {
+func (d *decoder) readCoproduct(tt sixty.Coproduct) sixty.CoproductValue {
 	d.expect("{")
 	if d.Error != nil {
 		return sixty.CoproductValue{}
@@ -276,7 +265,7 @@ func (d *Decoder) readCoproduct(tt sixty.Coproduct) sixty.CoproductValue {
 	}
 }
 
-func (d *Decoder) readList(schema sixty.Schema) sixty.ListValue {
+func (d *decoder) readList(schema sixty.Schema) sixty.ListValue {
 	d.expect("[")
 	if d.Error != nil {
 		return nil
@@ -308,7 +297,7 @@ func (d *Decoder) readList(schema sixty.Schema) sixty.ListValue {
 	}
 }
 
-func (d *Decoder) readArray(tt sixty.Array) sixty.ArrayValue {
+func (d *decoder) readArray(tt sixty.Array) sixty.ArrayValue {
 	d.expect("[")
 	if d.Error != nil {
 		return nil
@@ -332,7 +321,7 @@ func (d *Decoder) readArray(tt sixty.Array) sixty.ArrayValue {
 	return res
 }
 
-func (d *Decoder) readOptional(tt sixty.Optional) sixty.OptionalValue {
+func (d *decoder) readOptional(tt sixty.Optional) sixty.OptionalValue {
 	token := d.shift()
 	if token == "null" {
 		return sixty.OptionalValue{IsValid: false}
@@ -348,8 +337,19 @@ func (d *Decoder) readOptional(tt sixty.Optional) sixty.OptionalValue {
 	}
 }
 
+func newDecoder(data string) *decoder {
+	locations := TokenRegex.FindAllStringIndex(data, -1)
+	tokens := make([]string, len(locations))
+	starts := make([]int, len(locations))
+	for i, location := range locations {
+		tokens[i] = data[location[0]:location[1]]
+		starts[i] = location[0]
+	}
+	return &decoder{source: data, tokens: tokens, starts: starts}
+}
+
 // Decode parses data written by json.Encode.
-func Decode(t sixty.Schema, data string) (sixty.SchemaValue, error) {
+func decode(t sixty.Schema, data string) (sixty.SchemaValue, error) {
 	decoder := newDecoder(data)
 	res := decoder.Read(t)
 	if decoder.Error == nil && decoder.index != len(decoder.tokens) {
