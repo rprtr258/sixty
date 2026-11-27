@@ -33,17 +33,6 @@ func TestBttvDBEncode(t *testing.T) {
 	require.Equal(t, bttvEmotesDBBits, got)
 }
 
-// roundTrip encodes value with schema and decodes it back.
-func roundTrip(t *testing.T, schema sixty.Schema, value sixty.SchemaValue) sixty.SchemaValue {
-	t.Helper()
-
-	data, err := bit.Encode(schema, value)
-	require.NoError(t, err)
-	got, err := bit.Decode(schema, data)
-	require.NoError(t, err)
-	return got
-}
-
 // decoder reads uints as unary count prefix; encoder writes variant count
 // instead of the variant index for coproducts, so coproduct round trips panic.
 func TestRoundTripAllTypes(t *testing.T) {
@@ -63,21 +52,15 @@ func TestRoundTripAllTypes(t *testing.T) {
 		{sixty.Rune{}, sixty.RuneValue('a')},
 		{sixty.Enum{Values: []string{"a", "b", "c"}}, sixty.EnumValue(2)},
 		{sixty.EnumInt{Min: -5, Max: 5}, sixty.EnumIntValue(5)},
-		{
-			sixty.Product{{"x", sixty.Int{}}, {"b", sixty.Bit{}}},
-			sixty.ProductValue{sixty.IntValue(5), sixty.BitValue(true)},
-		},
+		{sixty.Product{{"x", sixty.Int{}}, {"b", sixty.Bit{}}}, sixty.ProductValue{sixty.IntValue(5), sixty.BitValue(true)}},
 		{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{sixty.BitValue(true), sixty.BitValue(false)}},
 		{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{}},
-		{
-			sixty.Array{Schema: sixty.Int{}, Count: 2},
-			sixty.ArrayValue{sixty.IntValue(1), sixty.IntValue(2)},
-		},
+		{sixty.Array{Schema: sixty.Int{}, Count: 2}, sixty.ArrayValue{sixty.IntValue(1), sixty.IntValue(2)}},
 		{sixty.Optional{Schema: sixty.Int{}}, sixty.OptionalValue{IsValid: false}},
 		{sixty.String{}, sixty.StringValue("Kappa")},
 	}
 	for _, test := range testCases {
-		require.Equal(t, test.value, roundTrip(t, test.schema, test.value), "schema %T", test.schema)
+		require.Equal(t, test.value, internal.RoundTrip(t, test.schema, test.value, bit.Encode, bit.Decode), "schema %T", test.schema)
 	}
 }
 

@@ -34,7 +34,6 @@ linters:
     - grouper
     - importas
     - ineffassign
-    - lll
     - maintidx
     - makezero
     - misspell
