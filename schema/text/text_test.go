@@ -18,7 +18,7 @@ func assertSchema(t *testing.T, schemaString string, expected sixty.Schema) {
 	require.Equal(t, expected, got)
 }
 
-var bttvEmotesDBSchemaString = `[](emote = :string,ids = []:string)`
+var bttvEmotesDBSchemaString = `[](emote = :string,ids = [][8]rune)`
 
 func TestDecode_BttvDB(t *testing.T) {
 	t.Parallel()
@@ -120,34 +120,52 @@ func TestDecode_Spaces(t *testing.T) {
 )`, sixty.Product{{"a", sixty.Int{}}, {"b", sixty.Int{}}})
 }
 
-// TODO: store aliases in aliases cache
-// func TestDecode_Alias2(t *testing.T) {
-// 	assertSchema(t, `
-// x0 = (l = int, r = int)
-// x1 = (l = x0, r = x0)
-// x2 = (l = x1, r = x1)
-// x3 = (l = x2, r = x2)
-// x4 = (l = x3, r = x3)
-// x5 = (l = x4, r = x4)
-// x6 = (l = x5, r = x5)
-// x7 = (l = x6, r = x6)
-// x8 = (l = x7, r = x7)
-// (first = x8, second = x8)`, sixty.Product{{"first", sixty.Int{}}, {"second", sixty.Int{}}})
-// }
+func TestDecode_AliasesOfAliases(t *testing.T) {
+	t.Parallel()
+
+	twoInts := sixty.Product{{"l", sixty.Int{}}, {"r", sixty.Int{}}}
+	fourInts := sixty.Product{{"l", twoInts}, {"r", twoInts}}
+	assertSchema(t, `
+x0 = (l = int, r = int)
+x1 = (l = x0, r = x0)
+(first = x1, second = x1)`, sixty.Product{{"first", fourInts}, {"second", fourInts}})
+}
+
+func TestParseErrorPositionCountsSpaces(t *testing.T) {
+	t.Parallel()
+
+	// "b" ends at byte offset 9: "(a=int" plus two spaces
+	_, err := text.ParseSchema("(a=int  b=int)")
+	require.ErrorContains(t, err, "error at position 9:")
+}
+
+func TestParseErrorEofPosition(t *testing.T) {
+	t.Parallel()
+
+	_, err := text.ParseSchema("(a=int")
+	require.ErrorContains(t, err, "error at position 6:")
+}
+
+func TestParseUnknownAlias(t *testing.T) {
+	t.Parallel()
+
+	_, err := text.ParseSchema("(a = undefined_alias)")
+	require.ErrorContains(t, err, `unknown alias "undefined_alias"`)
+}
 
 func TestPrettyEncode_BttvDB(t *testing.T) {
 	t.Parallel()
 
 	require.Equal(t, `[](
   emote = :string,
-  ids = []:string,
+  ids = [][8]rune,
 )`, text.PrettyEncode(internal.BttvEmotesDBSchema))
 }
 
 func TestAlgebraicEncode_BttvDB(t *testing.T) {
 	t.Parallel()
 
-	require.Equal(t, `[](:string * []:string)`, text.AlgebraicEncode(internal.BttvEmotesDBSchema))
+	require.Equal(t, `[](:string * []8 * rune)`, text.AlgebraicEncode(internal.BttvEmotesDBSchema))
 }
 
 func TestAlgebraicEncode_VKInfo(t *testing.T) {

@@ -1,7 +1,6 @@
 package text
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -60,7 +59,6 @@ func (e *algebraicEncoder) writeSubExpr(t sixty.Schema) {
 		e.builder.WriteString("1 + ")
 		e.writeSubExpr(tt.Schema)
 	default:
-		fmt.Printf("%T\n", t)
 		e.builder.WriteRune('(')
 		e.Write(tt)
 		e.builder.WriteRune(')')

@@ -14,12 +14,13 @@ var bttvEmotesDBBytes = []byte{
 	0x02,
 	0x05, 0x4b, 0x61, 0x70, 0x70, 0x61, // "Kappa"
 	0x02,
-	0x0b, 0x4b, 0x61, 0x70, 0x70, 0x61, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x31, // "KappaOwner1"
-	0x0b, 0x4b, 0x61, 0x70, 0x70, 0x61, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x32, // "KappaOwner2"
+	// ids are fixed-length [8]rune arrays without length prefixes
+	0x6b, 0x61, 0x70, 0x70, 0x61, 0x5f, 0x30, 0x31, // "kappa_01"
+	0x6b, 0x61, 0x70, 0x70, 0x61, 0x5f, 0x30, 0x32, // "kappa_02"
 	0x08, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, // "PogChamp"
 	0x02,
-	0x0e, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x31, // "PogChampOwner1"
-	0x0e, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x32, // "PogChampOwner2"
+	0x70, 0x6f, 0x67, 0x63, 0x68, 0x5f, 0x30, 0x31, // "pogch_01"
+	0x70, 0x6f, 0x67, 0x63, 0x68, 0x5f, 0x30, 0x32, // "pogch_02"
 }
 
 func TestBttvDBDecode(t *testing.T) {
@@ -41,52 +42,88 @@ func TestBttvDBEncode(t *testing.T) {
 func TestRoundTripAllTypes(t *testing.T) {
 	t.Parallel()
 
-	testCases := []struct {
-		schema sixty.Schema
-		value  sixty.SchemaValue
-	}{
-		{sixty.Bit{}, sixty.BitValue(true)},
-		{sixty.Bit{}, sixty.BitValue(false)},
-		{sixty.Int{}, sixty.IntValue(-42)},
-		{sixty.Uint{}, sixty.UintValue(300)}, // multi-byte varint
-		{sixty.Rune{}, sixty.RuneValue('ж')}, // multi-byte utf-8
-		{sixty.Enum{Values: []string{"a", "b", "c"}}, sixty.EnumValue(2)},
-		{sixty.EnumInt{Min: -5, Max: 5}, sixty.EnumIntValue(-3)},
-		{sixty.Product{{"x", sixty.Int{}}, {"b", sixty.Bit{}}}, sixty.ProductValue{sixty.IntValue(5), sixty.BitValue(true)}},
-		{sixty.Coproduct{{"int", sixty.Int{}}, {"string", sixty.String{}}}, sixty.CoproductValue{SchemaValue: sixty.IntValue(42), Variant: 0}},
-		{sixty.Coproduct{{"int", sixty.Int{}}, {"string", sixty.String{}}}, sixty.CoproductValue{SchemaValue: sixty.StringValue("hi"), Variant: 1}},
-		{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{sixty.BitValue(true)}},
-		{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{}},
-		{sixty.Array{Schema: sixty.Int{}, Count: 2}, sixty.ArrayValue{sixty.IntValue(1), sixty.IntValue(2)}},
-		{sixty.Optional{Schema: sixty.Int{}}, sixty.OptionalValue{IsValid: false}},
-		{sixty.Optional{Schema: sixty.Int{}}, sixty.OptionalValue{SchemaValue: sixty.IntValue(7), IsValid: true}},
-		{sixty.String{}, sixty.StringValue("κ산☺")}, // rune-count prefix, multi-byte payload
-	}
+	testCases := append(internal.PrimitiveTestCases(),
+		internal.TestCase{
+			Schema: sixty.Product{{"x", sixty.Int{}}, {"b", sixty.Bit{}}},
+			Value:  sixty.ProductValue{sixty.IntValue(5), sixty.BitValue(true)},
+		},
+		internal.TestCase{
+			Schema: sixty.Coproduct{{"int", sixty.Int{}}, {"string", sixty.String{}}},
+			Value:  sixty.CoproductValue{SchemaValue: sixty.IntValue(42), Variant: 0},
+		},
+		internal.TestCase{
+			Schema: sixty.Coproduct{{"int", sixty.Int{}}, {"string", sixty.String{}}},
+			Value:  sixty.CoproductValue{SchemaValue: sixty.StringValue("hi"), Variant: 1},
+		},
+		internal.TestCase{
+			Schema: sixty.List{Schema: sixty.Bit{}},
+			Value:  sixty.ListValue{sixty.BitValue(true)},
+		},
+		internal.TestCase{
+			Schema: sixty.List{Schema: sixty.Bit{}},
+			Value:  sixty.ListValue{},
+		},
+		internal.TestCase{
+			Schema: sixty.Array{Schema: sixty.Int{}, Count: 2},
+			Value:  sixty.ArrayValue{sixty.IntValue(1), sixty.IntValue(2)},
+		},
+		internal.TestCase{
+			Schema: sixty.Optional{Schema: sixty.Int{}},
+			Value:  sixty.OptionalValue{IsValid: false},
+		},
+		internal.TestCase{
+			Schema: sixty.Optional{Schema: sixty.Int{}},
+			Value:  sixty.OptionalValue{SchemaValue: sixty.IntValue(7), IsValid: true},
+		},
+	)
 	for _, test := range testCases {
-		require.Equal(t, test.value, internal.RoundTrip(t, test.schema, test.value, bytes.Codec), "schema %T", test.schema)
+		require.Equal(t, test.Value, internal.RoundTrip(t, test.Schema, test.Value, bytes.Codec), "schema %T", test.Schema)
 	}
 }
 
-func TestDecodeInvalidBitPanics(t *testing.T) {
+func TestDecodeInvalidBit(t *testing.T) {
 	t.Parallel()
 
-	require.Panics(t, func() {
-		_, _ = bytes.Codec.Decode(sixty.Bit{}, []byte{0x02})
-	})
+	_, err := bytes.Codec.Decode(sixty.Bit{}, []byte{0x02})
+	require.ErrorContains(t, err, "expected bit which is either 0 or 1, found: 2")
 }
 
-func TestDecodeEnumOutOfRangePanics(t *testing.T) {
+func TestDecodeEnumOutOfRange(t *testing.T) {
 	t.Parallel()
 
-	require.Panics(t, func() {
-		_, _ = bytes.Codec.Decode(sixty.Enum{Values: []string{"a", "b"}}, []byte{0x02})
-	})
+	_, err := bytes.Codec.Decode(sixty.Enum{Values: []string{"a", "b"}}, []byte{0x02})
+	require.ErrorContains(t, err, "found 2'th enum value while there are only 2 of them")
 }
 
-func TestDecodeOptionalInvalidMarkerPanics(t *testing.T) {
+func TestDecodeEnumIntOutOfRange(t *testing.T) {
 	t.Parallel()
 
-	require.Panics(t, func() {
-		_, _ = bytes.Codec.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x02})
-	})
+	_, err := bytes.Codec.Decode(sixty.EnumInt{Min: 0, Max: 1}, []byte{0x05})
+	require.ErrorContains(t, err, "out of range")
+}
+
+func TestDecodeOptionalInvalidMarker(t *testing.T) {
+	t.Parallel()
+
+	_, err := bytes.Codec.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x02})
+	require.ErrorContains(t, err, "option variant must be either 0 or 1, but it is 2")
+}
+
+func TestDecodeCoproductVariantOutOfRange(t *testing.T) {
+	t.Parallel()
+
+	// variant 3 while coproduct has only 2 variants
+	_, err := bytes.Codec.Decode(
+		sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}},
+		[]byte{0x03},
+	)
+	require.ErrorContains(t, err, "found variant 3 while coproduct has only 2 of them")
+}
+
+func TestDecodeErrorPosition(t *testing.T) {
+	t.Parallel()
+
+	// 1-byte varint prefix + invalid bit: error reported after 2 scanned bytes
+	_, err := bytes.Codec.Decode(sixty.List{Schema: sixty.Bit{}}, []byte{0x01, 0x05})
+	require.ErrorContains(t, err, "error at position 2:")
 }

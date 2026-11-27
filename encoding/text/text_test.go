@@ -56,14 +56,14 @@ func TestBttvDBEncode(t *testing.T) {
 
 	got, err := text.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
 	require.NoError(t, err)
-	require.Equal(t, `[{"Kappa",["KappaOwner1","KappaOwner2"]},{"PogChamp",["PogChampOwner1","PogChampOwner2"]}]`, got)
+	require.Equal(t, `[{"Kappa",[['k','a','p','p','a','_','0','1'],['k','a','p','p','a','_','0','2']]},{"PogChamp",[['p','o','g','c','h','_','0','1'],['p','o','g','c','h','_','0','2']]}]`, got)
 }
 
 func TestBttvDBDecode(t *testing.T) {
 	t.Parallel()
 
-	bttvEmotesDBText := `[{"Kappa",["KappaOwner1","KappaOwner2"]},
-		{"PogChamp",["PogChampOwner1","PogChampOwner2"]}]`
+	bttvEmotesDBText := `[{"Kappa",[['k','a','p','p','a','_','0','1'],['k','a','p','p','a','_','0','2']]},
+		{"PogChamp",[['p','o','g','c','h','_','0','1'],['p','o','g','c','h','_','0','2']]}]`
 	got, err := text.Codec.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBText)
 	require.NoError(t, err)
 	require.Equal(t, internal.BttvEmotesDBData, got)

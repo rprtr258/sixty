@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"reflect"
 
+	"go.uber.org/multierr"
+
 	"github.com/rprtr258/sixty"
 )
 
 type Decoder struct {
 	reader sixty.Reader
+	// Error - first decoding failure
+	Error error
 }
 
 func isSignedKind(kind reflect.Kind) bool {
@@ -20,12 +24,32 @@ func isUnsignedKind(kind reflect.Kind) bool {
 	return reflect.Uint <= kind && kind <= reflect.Uint64
 }
 
-// TODO: error handling.
+// DecodeError - data decoding failure, Pos counts scanned bytes.
+type DecodeError struct {
+	Pos    uint
+	Reason string
+}
+
+func (e DecodeError) Error() string {
+	return fmt.Sprintf("error at position %d: %s", e.Pos, e.Reason)
+}
+
 func (e *Decoder) appendErrorf(format string, args ...any) {
-	panic(fmt.Sprintf("error at position %d: ", e.reader.Pos()) + fmt.Sprintf(format, args...))
+	multierr.AppendInto(&e.Error, DecodeError{
+		Pos:    e.reader.Pos(),
+		Reason: fmt.Sprintf(format, args...),
+	})
+}
+
+// failed reports whether decoding must stop because of a decode or read error.
+func (e *Decoder) failed() bool {
+	return e.Error != nil || e.reader.Error != nil
 }
 
 func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
+	if e.failed() {
+		return
+	}
 	switch tt := t.(type) {
 	case sixty.String:
 		e.readString(rv)
@@ -52,20 +76,22 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 	case sixty.Optional:
 		e.readOptional(tt, rv)
 	default:
-		panic("something unimplemented")
+		e.appendErrorf("unsupported schema type %T", t)
 	}
 }
 
 func (e *Decoder) readString(rv reflect.Value) {
 	if rv.Kind() != reflect.String && rv.Kind() != reflect.Interface {
-		panic("something unimplemented")
+		e.appendErrorf("expected string, got %s", rv.Kind())
+		return
 	}
 	rv.Set(reflect.ValueOf(e.reader.ReadLengthString()))
 }
 
 func (e *Decoder) readBit(rv reflect.Value) {
 	if rv.Kind() != reflect.Bool && rv.Kind() != reflect.Interface {
-		panic("something unimplemented")
+		e.appendErrorf("expected bool, got %s", rv.Kind())
+		return
 	}
 	b := e.reader.ReadByte()
 	var value bool
@@ -89,21 +115,33 @@ func (e *Decoder) readInt(rv reflect.Value) {
 	value := e.reader.ReadInt64()
 	if isSignedKind(rv.Kind()) {
 		rv.SetInt(value)
-	} else {
-		rv.Set(reflect.ValueOf(value))
+		return
 	}
+	if rv.Kind() != reflect.Interface {
+		e.appendErrorf("expected signed int, got %s", rv.Kind())
+		return
+	}
+	rv.Set(reflect.ValueOf(value))
 }
 
 func (e *Decoder) readUint(rv reflect.Value) {
 	value := e.reader.ReadUint64()
 	if isUnsignedKind(rv.Kind()) {
 		rv.SetUint(value)
-	} else {
-		rv.Set(reflect.ValueOf(value))
+		return
 	}
+	if rv.Kind() != reflect.Interface {
+		e.appendErrorf("expected unsigned int, got %s", rv.Kind())
+		return
+	}
+	rv.Set(reflect.ValueOf(value))
 }
 
 func (e *Decoder) readRune(rv reflect.Value) {
+	if rv.Kind() != reflect.Int32 && rv.Kind() != reflect.Interface {
+		e.appendErrorf("expected rune, got %s", rv.Kind())
+		return
+	}
 	rv.Set(reflect.ValueOf(e.reader.ReadRune()))
 }
 
@@ -115,55 +153,87 @@ func (e *Decoder) readEnum(tt sixty.Enum, rv reflect.Value) {
 	}
 	if isUnsignedKind(rv.Kind()) {
 		rv.SetUint(n)
-	} else {
-		rv.Set(reflect.ValueOf(uint(n)))
+		return
 	}
+	if rv.Kind() != reflect.Interface {
+		e.appendErrorf("expected enum, got %s", rv.Kind())
+		return
+	}
+	rv.Set(reflect.ValueOf(uint(n)))
 }
 
 func (e *Decoder) readEnumInt(tt sixty.EnumInt, rv reflect.Value) {
 	n := e.reader.ReadUint64()
+	if int64(n) > tt.Max-tt.Min {
+		e.appendErrorf("enum int value %d out of range [%d..%d]", int64(n)+tt.Min, tt.Min, tt.Max)
+		return
+	}
 	if isSignedKind(rv.Kind()) {
 		rv.SetInt(int64(n) + tt.Min)
-	} else {
-		rv.Set(reflect.ValueOf(int64(n) + tt.Min))
+		return
 	}
+	if rv.Kind() != reflect.Interface {
+		e.appendErrorf("expected enum int, got %s", rv.Kind())
+		return
+	}
+	rv.Set(reflect.ValueOf(int64(n) + tt.Min))
 }
 
 func (e *Decoder) readProduct(tt sixty.Product, rv reflect.Value) {
 	if rv.Kind() != reflect.Struct {
-		panic("something unimplemented")
+		e.appendErrorf("expected struct, got %s", rv.Kind())
+		return
 	}
 	for i, x := range tt {
 		e.Read(x.Schema, rv.Field(i))
+		if e.failed() {
+			return
+		}
 	}
 }
 
 func (e *Decoder) readCoproduct(tt sixty.Coproduct, rv reflect.Value) {
 	if rv.Kind() != reflect.Interface {
-		panic("something unimplemented")
+		e.appendErrorf("expected interface, got %s", rv.Kind())
+		return
 	}
 	variant := e.reader.ReadUint64()
+	if variant >= uint64(len(tt)) {
+		e.appendErrorf("found variant %d while coproduct has only %d of them", variant, len(tt))
+		return
+	}
 	e.Read(tt[variant].Schema, rv)
 }
 
 func (e *Decoder) readList(tt sixty.List, rv reflect.Value) {
 	if rv.Kind() != reflect.Slice {
-		panic("something unimplemented")
+		e.appendErrorf("expected slice, got %s", rv.Kind())
+		return
 	}
 	lst := reflect.MakeSlice(rv.Type(), 0, 0)
-	hasNext := e.reader.ReadByte()
-	for hasNext == 1 {
-		x := reflect.New(rv.Type().Elem()).Elem()
-		e.Read(tt.Schema, x)
-		lst = reflect.Append(lst, x)
-		hasNext = e.reader.ReadByte()
+	for {
+		switch hasNext := e.reader.ReadByte(); hasNext {
+		case 0:
+			rv.Set(lst)
+			return
+		case 1:
+			x := reflect.New(rv.Type().Elem()).Elem()
+			e.Read(tt.Schema, x)
+			if e.failed() {
+				return
+			}
+			lst = reflect.Append(lst, x)
+		default:
+			e.appendErrorf("expected list marker to be either 0 or 1, but it is %d", hasNext)
+			return
+		}
 	}
-	rv.Set(lst)
 }
 
 func (e *Decoder) readArray(tt sixty.Array, rv reflect.Value) {
 	if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
-		panic("something unimplemented")
+		e.appendErrorf("expected slice or array, got %s", rv.Kind())
+		return
 	}
 	var lst reflect.Value
 	if rv.Kind() == reflect.Array {
@@ -173,6 +243,9 @@ func (e *Decoder) readArray(tt sixty.Array, rv reflect.Value) {
 	}
 	for i := uint(0); i < tt.Count; i++ {
 		e.Read(tt.Schema, lst.Index(int(i)))
+		if e.failed() {
+			return
+		}
 	}
 	rv.Set(lst)
 }
@@ -198,5 +271,8 @@ func Decode(t sixty.Schema, data []byte, v any) error {
 	buffer := bytes.NewBuffer(data)
 	decoder := Decoder{reader: sixty.NewReader(buffer)}
 	decoder.Read(t, reflect.ValueOf(v).Elem())
+	if decoder.Error != nil {
+		return decoder.Error
+	}
 	return decoder.reader.Error
 }

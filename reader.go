@@ -3,6 +3,8 @@ package sixty
 import (
 	"fmt"
 	"io"
+
+	"github.com/rprtr258/sixty/internal/zigzag"
 )
 
 const defaultBufferSize = 1 << 10
@@ -129,7 +131,7 @@ func (r *Reader) ReadUint64() (u uint64) {
 }
 
 func (r *Reader) ReadInt64() int64 {
-	return FromZigZag(r.ReadUint64())
+	return zigzag.Decode(r.ReadUint64())
 }
 
 func leadingOnes(x byte) (res uint) {

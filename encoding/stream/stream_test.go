@@ -14,16 +14,17 @@ var bttvEmotesDBStream = []byte{
 	0x01,
 	0x05, 0x4b, 0x61, 0x70, 0x70, 0x61, // "Kappa"
 	0x01,
-	0x0b, 0x4b, 0x61, 0x70, 0x70, 0x61, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x31, // "KappaOwner1"
+	// ids are fixed-length [8]rune arrays without length prefixes
+	0x6b, 0x61, 0x70, 0x70, 0x61, 0x5f, 0x30, 0x31, // "kappa_01"
 	0x01,
-	0x0b, 0x4b, 0x61, 0x70, 0x70, 0x61, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x32, // "KappaOwner2"
+	0x6b, 0x61, 0x70, 0x70, 0x61, 0x5f, 0x30, 0x32, // "kappa_02"
 	0x00,
 	0x01,
 	0x08, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, // "PogChamp"
 	0x01,
-	0x0e, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x31, // "PogChampOwner1"
+	0x70, 0x6f, 0x67, 0x63, 0x68, 0x5f, 0x30, 0x31, // "pogch_01"
 	0x01,
-	0x0e, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x32, // "PogChampOwner2"
+	0x70, 0x6f, 0x67, 0x63, 0x68, 0x5f, 0x30, 0x32, // "pogch_02"
 	0x00,
 	0x00,
 }
@@ -41,7 +42,7 @@ func TestDecode_BttvDB(t *testing.T) {
 
 	type entry struct {
 		Emote string
-		Ids   []string
+		Ids   [][8]rune
 	}
 
 	type BttvEmotesDB []entry
@@ -52,10 +53,10 @@ func TestDecode_BttvDB(t *testing.T) {
 	require.Equal(t,
 		BttvEmotesDB([]entry{{
 			Emote: "Kappa",
-			Ids:   []string{"KappaOwner1", "KappaOwner2"},
+			Ids:   [][8]rune{{'k', 'a', 'p', 'p', 'a', '_', '0', '1'}, {'k', 'a', 'p', 'p', 'a', '_', '0', '2'}},
 		}, {
 			Emote: "PogChamp",
-			Ids:   []string{"PogChampOwner1", "PogChampOwner2"},
+			Ids:   [][8]rune{{'p', 'o', 'g', 'c', 'h', '_', '0', '1'}, {'p', 'o', 'g', 'c', 'h', '_', '0', '2'}},
 		}}),
 		got,
 	)
@@ -240,63 +241,78 @@ func TestDecodeIntAndEnumIntoAny(t *testing.T) {
 	require.Equal(t, 'a', got.Rune)
 }
 
-func TestDecodeWrongKindsPanic(t *testing.T) {
+func TestDecodeWrongKinds(t *testing.T) {
 	t.Parallel()
 
 	// string into non-string field
-	require.Panics(t, func() {
-		var got struct{ X int64 }
-		_ = stream.Decode(sixty.Product{{"x", sixty.String{}}},
-			[]byte{0x01, 0x61}, &got)
-	})
+	var strTarget struct{ X int64 }
+	require.ErrorContains(t,
+		stream.Decode(sixty.Product{{"x", sixty.String{}}},
+			[]byte{0x01, 0x61}, &strTarget),
+		"expected string, got int64")
 	// bit into non-bool field
-	require.Panics(t, func() {
-		var got struct{ X int64 }
-		_ = stream.Decode(sixty.Product{{"x", sixty.Bit{}}},
-			[]byte{0x01}, &got)
-	})
+	var bitTarget struct{ X int64 }
+	require.ErrorContains(t,
+		stream.Decode(sixty.Product{{"x", sixty.Bit{}}},
+			[]byte{0x01}, &bitTarget),
+		"expected bool, got int64")
 	// product into non-struct field
-	require.Panics(t, func() {
-		var got struct{ X int64 }
-		_ = stream.Decode(sixty.Product{{"x", sixty.Product{{"y", sixty.Int{}}}}},
-			[]byte{0x02}, &got)
-	})
+	var prodTarget struct{ X int64 }
+	require.ErrorContains(t,
+		stream.Decode(sixty.Product{{"x", sixty.Product{{"y", sixty.Int{}}}}},
+			[]byte{0x02}, &prodTarget),
+		"expected struct, got int64")
 	// coproduct into non-interface field
-	require.Panics(t, func() {
-		var got struct{ X int64 }
-		_ = stream.Decode(sixty.Product{{"x", sixty.Coproduct{{"y", sixty.Int{}}}}},
-			[]byte{0x00, 0x02}, &got)
-	})
+	var copTarget struct{ X int64 }
+	require.ErrorContains(t,
+		stream.Decode(sixty.Product{{"x", sixty.Coproduct{{"y", sixty.Int{}}}}},
+			[]byte{0x00, 0x02}, &copTarget),
+		"expected interface, got int64")
 	// list into non-slice field
-	require.Panics(t, func() {
-		var got struct{ X int64 }
-		_ = stream.Decode(sixty.Product{{"x", sixty.List{Schema: sixty.Int{}}}},
-			[]byte{0x00}, &got)
-	})
+	var listTarget struct{ X int64 }
+	require.ErrorContains(t,
+		stream.Decode(sixty.Product{{"x", sixty.List{Schema: sixty.Int{}}}},
+			[]byte{0x00}, &listTarget),
+		"expected slice, got int64")
 	// array into non-slice field
-	require.Panics(t, func() {
-		var got struct{ X int64 }
-		_ = stream.Decode(sixty.Product{{"x", sixty.Array{Schema: sixty.Int{}, Count: 1}}},
-			[]byte{0x02}, &got)
-	})
+	var arrTarget struct{ X int64 }
+	require.ErrorContains(t,
+		stream.Decode(sixty.Product{{"x", sixty.Array{Schema: sixty.Int{}, Count: 1}}},
+			[]byte{0x02}, &arrTarget),
+		"expected slice or array, got int64")
 }
 
-func TestDecodeInvalidValuesPanic(t *testing.T) {
+func TestDecodeInvalidValues(t *testing.T) {
 	t.Parallel()
 
 	// bit marker 2
-	require.Panics(t, func() {
-		var got bool
-		_ = stream.Decode(sixty.Bit{}, []byte{0x02}, &got)
-	})
+	var bitGot bool
+	require.ErrorContains(t,
+		stream.Decode(sixty.Bit{}, []byte{0x02}, &bitGot),
+		"expected bit which is either 0 or 1, found: 2")
 	// enum index out of range
-	require.Panics(t, func() {
-		var got uint8
-		_ = stream.Decode(sixty.Enum{Values: []string{"a"}}, []byte{0x01}, &got)
-	})
+	var enumGot uint8
+	require.ErrorContains(t,
+		stream.Decode(sixty.Enum{Values: []string{"a"}}, []byte{0x01}, &enumGot),
+		"found 1'th enum value while there are only 1 of them")
 	// optional marker 2
-	require.Panics(t, func() {
-		var got *int64
-		_ = stream.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x02}, &got)
-	})
+	var optGot *int64
+	require.ErrorContains(t,
+		stream.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x02}, &optGot),
+		"option variant must be either 0 or 1, but it is 2")
+	// enum int out of range
+	var enumIntGot int64
+	require.ErrorContains(t,
+		stream.Decode(sixty.EnumInt{Min: 0, Max: 1}, []byte{0x05}, &enumIntGot),
+		"out of range")
+	// coproduct variant out of range
+	var copGot any
+	require.ErrorContains(t,
+		stream.Decode(sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}}, []byte{0x03, 0x02}, &copGot),
+		"found variant 3 while coproduct has only 2 of them")
+	// invalid list marker
+	var listGot []int64
+	require.ErrorContains(t,
+		stream.Decode(sixty.List{Schema: sixty.Int{}}, []byte{0x05}, &listGot),
+		"expected list marker to be either 0 or 1, but it is 5")
 }

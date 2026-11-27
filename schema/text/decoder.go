@@ -25,13 +25,22 @@ func (e ParseError) Error() string {
 	return fmt.Sprintf("error at position %d: %s", e.Pos, e.Reason)
 }
 
+type token struct {
+	text string
+	// end - byte offset just past the token in the source string
+	end uint
+}
+
 type SchemaReader struct {
 	aliases map[string]sixty.Schema
-	tokens  [][]byte
+	tokens  []token
 	index   uint
-	// TODO: fix not counting space chars
-	pos   uint
-	Error error
+	// pos - byte offset in the source string: end of the last consumed token,
+	// so that error positions count skipped whitespace too
+	pos uint
+	// sourceLen - byte length of the source string, reported as position on eof
+	sourceLen uint
+	Error     error
 }
 
 func (r *SchemaReader) appendErrorf(format string, args ...any) {
@@ -44,11 +53,13 @@ func (r *SchemaReader) appendErrorf(format string, args ...any) {
 // shift gets next token and moves reader one step forward.
 func (r *SchemaReader) shift() (res string) {
 	if r.index == uint(len(r.tokens)) {
+		r.pos = r.sourceLen
 		r.appendErrorf("unexpected eof")
 		return
 	}
-	res = string(r.tokens[r.index])
-	r.pos += uint(len(res))
+	t := r.tokens[r.index]
+	res = t.text
+	r.pos = t.end
 	r.index++
 	return
 }
@@ -59,10 +70,10 @@ func (r *SchemaReader) unshift() {
 		r.appendErrorf("trying to shift when index is 0")
 		return
 	}
-	if r.index < uint(len(r.tokens)) {
-		r.pos -= uint(len(r.tokens[r.index]))
-	}
 	r.index--
+	if r.index < uint(len(r.tokens)) {
+		r.pos = r.tokens[r.index].end
+	}
 }
 
 func (r *SchemaReader) skip(expected string) {
@@ -106,7 +117,7 @@ func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.
 	}
 }
 
-// TODO: skip spaces.
+// ParseSchema parses one schema definition, skipping whitespace between tokens.
 func (r *SchemaReader) ParseSchema() sixty.Schema {
 	token := r.shift()
 	switch token {
@@ -172,21 +183,32 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		nextToken := r.shift()
 		if nextToken != "=" {
 			r.unshift()
-			return r.aliases[name]
+			res, ok := r.aliases[name]
+			if !ok {
+				r.appendErrorf("unknown alias %q", name)
+			}
+			return res
 		}
-		r.aliases[name] = r.ParseSchema()
+		alias := r.ParseSchema()
 		if r.Error != nil {
 			return nil
 		}
+		r.aliases[name] = alias
 		return r.ParseSchema()
 	}
 }
 
 func Tokenize(s string) SchemaReader {
+	matches := TokenRegex.FindAllStringIndex(s, -1)
+	tokens := make([]token, len(matches))
+	for i, m := range matches {
+		tokens[i] = token{text: s[m[0]:m[1]], end: uint(m[1])}
+	}
 	return SchemaReader{
-		tokens:  TokenRegex.FindAll([]byte(s), -1),
-		aliases: make(map[string]sixty.Schema),
-		index:   0,
+		tokens:    tokens,
+		aliases:   make(map[string]sixty.Schema),
+		index:     0,
+		sourceLen: uint(len(s)),
 	}
 }
 

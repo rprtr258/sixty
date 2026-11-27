@@ -16,7 +16,7 @@ func TestBttvDBDecode(t *testing.T) {
 
 	type entry struct {
 		Emote string
-		Ids   []string
+		Ids   [][8]rune
 	}
 
 	type BttvEmotesDB []entry
@@ -27,10 +27,10 @@ func TestBttvDBDecode(t *testing.T) {
 	require.Equal(t,
 		BttvEmotesDB([]entry{{
 			Emote: "Kappa",
-			Ids:   []string{"KappaOwner1", "KappaOwner2"},
+			Ids:   [][8]rune{{'k', 'a', 'p', 'p', 'a', '_', '0', '1'}, {'k', 'a', 'p', 'p', 'a', '_', '0', '2'}},
 		}, {
 			Emote: "PogChamp",
-			Ids:   []string{"PogChampOwner1", "PogChampOwner2"},
+			Ids:   [][8]rune{{'p', 'o', 'g', 'c', 'h', '_', '0', '1'}, {'p', 'o', 'g', 'c', 'h', '_', '0', '2'}},
 		}}),
 		got,
 	)
@@ -41,15 +41,15 @@ func TestBttvDBEncode(t *testing.T) {
 
 	type entry struct {
 		Emote string
-		Ids   []string
+		Ids   [][8]rune
 	}
 
 	got, err := common.Encode(internal.BttvEmotesDBSchema, []entry{{
 		Emote: "Kappa",
-		Ids:   []string{"KappaOwner1", "KappaOwner2"},
+		Ids:   [][8]rune{{'k', 'a', 'p', 'p', 'a', '_', '0', '1'}, {'k', 'a', 'p', 'p', 'a', '_', '0', '2'}},
 	}, {
 		Emote: "PogChamp",
-		Ids:   []string{"PogChampOwner1", "PogChampOwner2"},
+		Ids:   [][8]rune{{'p', 'o', 'g', 'c', 'h', '_', '0', '1'}, {'p', 'o', 'g', 'c', 'h', '_', '0', '2'}},
 	}})
 	require.NoError(t, err)
 	require.Equal(t, internal.BttvEmotesDBData, got)

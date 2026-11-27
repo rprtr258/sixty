@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/rprtr258/sixty"
+	"github.com/rprtr258/sixty/internal/check"
 )
 
 type encoder struct {
@@ -13,32 +14,32 @@ type encoder struct {
 }
 
 func (e *encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
-	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
+	if _, vv, ok := check.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
 		e.writer.WriteRune('"')
 		e.writer.WriteString(strings.ReplaceAll(string(vv), "\"", "\"\""))
 		e.writer.WriteRune('"')
-	} else if _, vv, ok := sixty.AssertSchemas[sixty.Bit, sixty.BitValue](t, v); ok {
+	} else if _, vv, ok := check.AssertSchemas[sixty.Bit, sixty.BitValue](t, v); ok {
 		if vv {
 			e.writer.WriteString("true")
 		} else {
 			e.writer.WriteString("false")
 		}
-	} else if _, vv, ok := sixty.AssertSchemas[sixty.Int, sixty.IntValue](t, v); ok {
+	} else if _, vv, ok := check.AssertSchemas[sixty.Int, sixty.IntValue](t, v); ok {
 		e.writer.WriteString(strconv.FormatInt(int64(vv), 10))
-	} else if _, vv, ok := sixty.AssertSchemas[sixty.Uint, sixty.UintValue](t, v); ok {
+	} else if _, vv, ok := check.AssertSchemas[sixty.Uint, sixty.UintValue](t, v); ok {
 		e.writer.WriteString(strconv.FormatUint(uint64(vv), 10))
-	} else if _, vv, ok := sixty.AssertSchemas[sixty.Rune, sixty.RuneValue](t, v); ok {
+	} else if _, vv, ok := check.AssertSchemas[sixty.Rune, sixty.RuneValue](t, v); ok {
 		e.writer.WriteRune('\'')
 		if vv == '\'' {
 			e.writer.WriteRune('\\')
 		}
 		e.writer.WriteRune(rune(vv))
 		e.writer.WriteRune('\'')
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Enum, sixty.EnumValue](t, v); ok {
+	} else if tt, vv, ok := check.AssertSchemas[sixty.Enum, sixty.EnumValue](t, v); ok {
 		e.writer.WriteString(tt.Values[vv])
-	} else if _, vv, ok := sixty.AssertSchemas[sixty.EnumInt, sixty.EnumIntValue](t, v); ok {
+	} else if _, vv, ok := check.AssertSchemas[sixty.EnumInt, sixty.EnumIntValue](t, v); ok {
 		e.writer.WriteString(strconv.FormatInt(int64(vv), 10))
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
+	} else if tt, vv, ok := check.AssertSchemas[sixty.Product, sixty.ProductValue](t, v); ok {
 		e.writer.WriteRune('{')
 		for i, x := range vv {
 			e.Write(tt[i].Schema, x)
@@ -47,13 +48,13 @@ func (e *encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 			}
 		}
 		e.writer.WriteRune('}')
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
+	} else if tt, vv, ok := check.AssertSchemas[sixty.Coproduct, sixty.CoproductValue](t, v); ok {
 		e.writer.WriteRune('{')
 		e.writer.WriteString(strconv.FormatUint(uint64(vv.Variant), 10))
 		e.writer.WriteString(":")
 		e.Write(tt[vv.Variant].Schema, vv.SchemaValue)
 		e.writer.WriteRune('}')
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
+	} else if tt, vv, ok := check.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.writer.WriteRune('[')
 		for i, x := range vv {
 			if i > 0 {
@@ -62,7 +63,7 @@ func (e *encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 			e.Write(tt.Schema, x)
 		}
 		e.writer.WriteRune(']')
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Array, sixty.ArrayValue](t, v); ok {
+	} else if tt, vv, ok := check.AssertSchemas[sixty.Array, sixty.ArrayValue](t, v); ok {
 		e.writer.WriteRune('[')
 		for i := uint(0); i < tt.Count; i++ {
 			if i > 0 {
@@ -71,7 +72,7 @@ func (e *encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 			e.Write(tt.Schema, vv[i])
 		}
 		e.writer.WriteRune(']')
-	} else if tt, vv, ok := sixty.AssertSchemas[sixty.Optional, sixty.OptionalValue](t, v); ok {
+	} else if tt, vv, ok := check.AssertSchemas[sixty.Optional, sixty.OptionalValue](t, v); ok {
 		if !vv.IsValid {
 			e.writer.WriteString("null")
 		} else {
@@ -86,5 +87,6 @@ func encode(t sixty.Schema, v sixty.SchemaValue) (string, error) {
 	buffer := bytes.Buffer{}
 	encoder := encoder{writer: sixty.NewWriter(&buffer)}
 	encoder.Write(t, v)
+	encoder.writer.Flush()
 	return buffer.String(), encoder.writer.Error
 }
