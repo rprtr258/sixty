@@ -10,7 +10,7 @@ import (
 	"github.com/rprtr258/sixty/internal"
 )
 
-var BttvEmotesDBStream = []byte{
+var bttvEmotesDBStream = []byte{
 	0x01,
 	0x05, 0x4b, 0x61, 0x70, 0x70, 0x61, // "Kappa"
 	0x01,
@@ -33,7 +33,7 @@ func TestBttvDBEncode(t *testing.T) {
 
 	got, err := stream.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
 	assert.NoError(t, err)
-	assert.Equal(t, BttvEmotesDBStream, got)
+	assert.Equal(t, bttvEmotesDBStream, got)
 }
 
 func TestDecode_BttvDB(t *testing.T) {
@@ -47,7 +47,7 @@ func TestDecode_BttvDB(t *testing.T) {
 	type BttvEmotesDB []entry
 
 	var got BttvEmotesDB
-	err := stream.Decode(internal.BttvEmotesDBSchema, BttvEmotesDBStream, &got)
+	err := stream.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBStream, &got)
 	assert.NoError(t, err)
 	assert.Equal(t,
 		BttvEmotesDB([]entry{{

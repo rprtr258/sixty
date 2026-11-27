@@ -1,6 +1,7 @@
 package text_test
 
 import (
+	_ "embed"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,16 +18,47 @@ func assertSchema(t *testing.T, schemaString string, expected sixty.Schema) {
 	assert.Equal(t, expected, got)
 }
 
+var bttvEmotesDBSchemaString = `[](emote = :string,ids = []:string)`
+
 func TestDecode_BttvDB(t *testing.T) {
 	t.Parallel()
 
-	assertSchema(t, internal.BttvEmotesDBSchemaString, internal.BttvEmotesDBSchema)
+	assertSchema(t, bttvEmotesDBSchemaString, internal.BttvEmotesDBSchema)
 }
+
+func TestEncode_BttvDB(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, bttvEmotesDBSchemaString, text.Encode(internal.BttvEmotesDBSchema))
+}
+
+var (
+	VKInfoSchema = sixty.Coproduct{
+		{"group", sixty.Product{
+			{"id", sixty.Uint{}},
+			{"alias", sixty.String{}},
+			{"name", sixty.String{}},
+		}},
+		{"user", sixty.Product{
+			{"id", sixty.Uint{}},
+			{"first_name", sixty.String{}},
+			{"last_name", sixty.String{}},
+		}},
+	}
+	//go:embed vk_info_schema.txt
+	VKInfoSchemaString string
+)
 
 func TestDecode_VKInfo(t *testing.T) {
 	t.Parallel()
 
-	assertSchema(t, internal.VKInfoSchemaString, internal.VKInfoSchema)
+	assertSchema(t, VKInfoSchemaString, VKInfoSchema)
+}
+
+func TestEncode_VKInfo(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, VKInfoSchemaString, text.Encode(VKInfoSchema))
 }
 
 func TestDecode_EnumInt(t *testing.T) {
@@ -102,3 +134,24 @@ func TestDecode_Spaces(t *testing.T) {
 // x8 = (l = x7, r = x7)
 // (first = x8, second = x8)`, sixty.Product{{"first", sixty.Int{}}, {"second", sixty.Int{}}})
 // }
+
+func TestPrettyEncode_BttvDB(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, `[](
+  emote = :string,
+  ids = []:string,
+)`, text.PrettyEncode(internal.BttvEmotesDBSchema))
+}
+
+func TestAlgebraicEncode_BttvDB(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, `[](:string * []:string)`, text.AlgebraicEncode(internal.BttvEmotesDBSchema))
+}
+
+func TestAlgebraicEncode_VKInfo(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, `(uint * :string * :string) + (uint * :string * :string)`, text.AlgebraicEncode(VKInfoSchema))
+}
