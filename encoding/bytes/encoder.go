@@ -10,7 +10,6 @@ type Encoder struct {
 	writer sixty.Writer
 }
 
-// TODO: native types.
 func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	if _, vv, ok := sixty.AssertSchemas[sixty.String, sixty.StringValue](t, v); ok {
 		e.writer.WriteUint64(uint64(len(vv)))
