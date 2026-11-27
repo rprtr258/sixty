@@ -12,8 +12,8 @@ type Decoder struct {
 	reader sixty.Reader
 }
 
-// TODO: error
-func (e *Decoder) appendError(format string, args ...any) {
+// TODO: error handling.
+func (e *Decoder) appendErrorf(format string, args ...any) {
 	panic(fmt.Sprintf("error at position %d: ", e.reader.Pos()) + fmt.Sprintf(format, args...))
 }
 
@@ -28,7 +28,7 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 		case 1:
 			rv.SetBool(true)
 		default:
-			e.appendError("expected bit which is either 0 or 1, found: %d", b)
+			e.appendErrorf("expected bit which is either 0 or 1, found: %d", b)
 		}
 	} else if _, _, ok := sixty.AssertSchemas[sixty.Int, int64](t, rv); ok {
 		rv.SetInt(e.reader.ReadInt64())
@@ -44,7 +44,7 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 			rv.SetUint(n)
 			return
 		}
-		e.appendError("found %d'th enum value while there are only %d of them", n, len(tt.Values))
+		e.appendErrorf("found %d'th enum value while there are only %d of them", n, len(tt.Values))
 	} else if tt, _, ok := sixty.AssertSchemas[sixty.EnumInt, int64](t, rv); ok {
 		n := e.reader.ReadUint64()
 		rv.SetInt(int64(n) + tt.Min)

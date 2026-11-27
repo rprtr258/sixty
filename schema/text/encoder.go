@@ -39,6 +39,31 @@ func NewEncoder(builder strings.Builder) encoder {
 	}
 }
 
+func (e *encoder) writeFields(fields []sixty.NamedSchema, open, close rune) {
+	e.builder.WriteRune(open)
+	e.builder.WriteString(e.prefix)
+	e.identSize++
+	i := 0
+iter_fields:
+	e.builder.WriteString(strings.Repeat(e.ident, int(e.identSize)))
+	e.builder.WriteString(fields[i].Name)
+	e.builder.WriteString(" = ")
+	e.disableIndent = true
+	e.Write(fields[i].Schema)
+	if i < len(fields)-1 {
+		i++
+		e.builder.WriteString(",")
+		e.builder.WriteString(e.prefix)
+		goto iter_fields
+	}
+	if e.printTrailingComma {
+		e.builder.WriteRune(',')
+		e.builder.WriteString(e.prefix)
+	}
+	e.identSize--
+	e.builder.WriteRune(close)
+}
+
 func (e *encoder) Write(t sixty.Schema) {
 	if !e.disableIndent {
 		e.builder.WriteString(strings.Repeat(e.ident, int(e.identSize)))
@@ -74,51 +99,9 @@ func (e *encoder) Write(t sixty.Schema) {
 		e.builder.WriteString(strconv.FormatInt(tt.Max, 10))
 		e.builder.WriteRune(']')
 	case sixty.Product:
-		e.builder.WriteRune('(')
-		e.builder.WriteString(e.prefix)
-		e.identSize++
-		i := 0
-	iter_product:
-		e.builder.WriteString(strings.Repeat(e.ident, int(e.identSize)))
-		e.builder.WriteString(tt[i].Name)
-		e.builder.WriteString(" = ")
-		e.disableIndent = true
-		e.Write(tt[i].Schema)
-		if i < len(tt)-1 {
-			i++
-			e.builder.WriteString(",")
-			e.builder.WriteString(e.prefix)
-			goto iter_product
-		}
-		if e.printTrailingComma {
-			e.builder.WriteRune(',')
-			e.builder.WriteString(e.prefix)
-		}
-		e.identSize--
-		e.builder.WriteRune(')')
+		e.writeFields(tt, '(', ')')
 	case sixty.Coproduct:
-		e.builder.WriteRune('[')
-		e.builder.WriteString(e.prefix)
-		e.identSize++
-		i := 0
-	iter_coproduct:
-		e.builder.WriteString(strings.Repeat(e.ident, int(e.identSize)))
-		e.builder.WriteString(tt[i].Name)
-		e.builder.WriteString(" = ")
-		e.disableIndent = true
-		e.Write(tt[i].Schema)
-		if i < len(tt)-1 {
-			i++
-			e.builder.WriteString(",")
-			e.builder.WriteString(e.prefix)
-			goto iter_coproduct
-		}
-		if e.printTrailingComma {
-			e.builder.WriteRune(',')
-			e.builder.WriteString(e.prefix)
-		}
-		e.identSize--
-		e.builder.WriteRune(']')
+		e.writeFields(tt, '[', ']')
 	case sixty.List:
 		e.builder.WriteString("[]")
 		tmp := e.identSize

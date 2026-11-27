@@ -7,6 +7,15 @@ import (
 
 const defaultBufferSize = 1 << 10
 
+// TooLongRuneError - reported by ReadRune on a UTF-8 lead byte claiming more than 4 bytes.
+type TooLongRuneError struct {
+	Pos uint
+}
+
+func (e TooLongRuneError) Error() string {
+	return fmt.Sprintf("TOO LONG RUNE at %d", e.Pos)
+}
+
 type Reader struct {
 	// reader - underlying raw reader
 	reader io.Reader
@@ -18,7 +27,7 @@ type Reader struct {
 	end int
 	// pos - count of bytes scanned
 	pos uint
-	// Error - first error occured
+	// Error - first error occurred
 	Error error
 }
 
@@ -33,7 +42,7 @@ func NewReader(r io.Reader) Reader {
 	return NewReaderBufferSize(r, defaultBufferSize)
 }
 
-// loadMore - read data from inner reader and update buffer, returns true if some data was read
+// loadMore - read data from inner reader and update buffer, returns true if some data was read.
 func (r *Reader) loadMore() bool {
 	if r.start != r.end {
 		return true
@@ -91,13 +100,13 @@ func (r *Reader) ReadRune() (u rune) {
 		return rune(b0&0x0F)<<18 | rune(b1&maskx)<<12 | rune(b2&maskx)<<6 | rune(b3&maskx)
 	default:
 		if r.Error == nil {
-			r.Error = fmt.Errorf("TOO LONG RUNE at %d", r.pos)
+			r.Error = TooLongRuneError{Pos: r.pos}
 		}
 		return
 	}
 }
 
-// ReadLengthString - read length encoded string
+// ReadLengthString - read length encoded string.
 func (r *Reader) ReadLengthString() string {
 	resLen := r.ReadUint64()
 	runes := make([]rune, 0, resLen)

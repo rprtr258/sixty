@@ -22,6 +22,7 @@ func (e *Encoder) writeUint(x uint64) {
 	e.buffer.TryWriteBool(false)
 	e.buffer.TryWriteBits(x, uint8(n))
 }
+
 func (e *Encoder) writeInt(x int64) {
 	e.writeUint(sixty.ToZigZag(x))
 }

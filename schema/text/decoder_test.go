@@ -18,14 +18,20 @@ func assertSchema(t *testing.T, schemaString string, expected sixty.Schema) {
 }
 
 func TestDecode_BttvDB(t *testing.T) {
+	t.Parallel()
+
 	assertSchema(t, internal.BttvEmotesDBSchemaString, internal.BttvEmotesDBSchema)
 }
 
 func TestDecode_VKInfo(t *testing.T) {
+	t.Parallel()
+
 	assertSchema(t, internal.VKInfoSchemaString, internal.VKInfoSchema)
 }
 
 func TestDecode_EnumInt(t *testing.T) {
+	t.Parallel()
+
 	assertSchema(t, `[][0..255]`, sixty.List{Schema: sixty.EnumInt{
 		Min: 0,
 		Max: 255,
@@ -33,6 +39,8 @@ func TestDecode_EnumInt(t *testing.T) {
 }
 
 func TestDecode_Everything(t *testing.T) {
+	t.Parallel()
+
 	assertSchema(
 		t,
 		`[][3][str=:string,prod=(ei=[-2..2],i=int,u=uint,b=bit,e={a,b,c})]`,
@@ -53,19 +61,27 @@ func TestDecode_Everything(t *testing.T) {
 }
 
 func TestDecode_NoEndComma(t *testing.T) {
+	t.Parallel()
+
 	assertSchema(t, `(a=int,b=int)`, sixty.Product{{"a", sixty.Int{}}, {"b", sixty.Int{}}})
 }
 
 func TestDecode_EndComma(t *testing.T) {
+	t.Parallel()
+
 	assertSchema(t, `(a=int,b=int,)`, sixty.Product{{"a", sixty.Int{}}, {"b", sixty.Int{}}})
 }
 
 func TestDecode_Alias(t *testing.T) {
+	t.Parallel()
+
 	assertSchema(t, `a = int
 (first = a, second = a)`, sixty.Product{{"first", sixty.Int{}}, {"second", sixty.Int{}}})
 }
 
 func TestDecode_Spaces(t *testing.T) {
+	t.Parallel()
+
 	assertSchema(t, `(
   a = int,
   b = int,

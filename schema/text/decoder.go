@@ -1,7 +1,6 @@
 package text
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -16,6 +15,16 @@ var (
 	IdentifierRegex = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_-]*$`)
 )
 
+// ParseError - schema text parsing failure, Pos counts scanned bytes.
+type ParseError struct {
+	Pos    uint
+	Reason string
+}
+
+func (e ParseError) Error() string {
+	return fmt.Sprintf("error at position %d: %s", e.Pos, e.Reason)
+}
+
 type SchemaReader struct {
 	aliases map[string]sixty.Schema
 	tokens  [][]byte
@@ -25,16 +34,17 @@ type SchemaReader struct {
 	Error error
 }
 
-func (r *SchemaReader) appendError(format string, args ...any) {
-	multierr.AppendInto(&r.Error, errors.New(
-		fmt.Sprintf("error at position %d: ", r.pos)+fmt.Sprintf(format, args...)),
-	)
+func (r *SchemaReader) appendErrorf(format string, args ...any) {
+	multierr.AppendInto(&r.Error, ParseError{
+		Pos:    r.pos,
+		Reason: fmt.Sprintf(format, args...),
+	})
 }
 
-// shift gets next token and moves reader one step forward
+// shift gets next token and moves reader one step forward.
 func (r *SchemaReader) shift() (res string) {
 	if r.index == uint(len(r.tokens)) {
-		r.appendError("unexpected eof")
+		r.appendErrorf("unexpected eof")
 		return
 	}
 	res = string(r.tokens[r.index])
@@ -43,10 +53,10 @@ func (r *SchemaReader) shift() (res string) {
 	return
 }
 
-// unshift moves reader one step back
+// unshift moves reader one step back.
 func (r *SchemaReader) unshift() {
 	if r.index == 0 {
-		r.appendError("trying to shift when index is 0")
+		r.appendErrorf("trying to shift when index is 0")
 		return
 	}
 	if r.index < uint(len(r.tokens)) {
@@ -58,7 +68,7 @@ func (r *SchemaReader) unshift() {
 func (r *SchemaReader) skip(expected string) {
 	token := r.shift()
 	if token != expected {
-		r.appendError("expected %q, found %q", expected, token)
+		r.appendErrorf("expected %q, found %q", expected, token)
 		r.unshift()
 	}
 }
@@ -70,7 +80,7 @@ func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.
 		}
 		fieldName := r.shift()
 		if !IdentifierRegex.Match([]byte(fieldName)) {
-			r.appendError("%s is incorrect identifier", fieldName)
+			r.appendErrorf("%s is incorrect identifier", fieldName)
 			return
 		}
 		r.skip("=")
@@ -90,13 +100,13 @@ func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.
 			}
 			r.unshift()
 		default:
-			r.appendError("expected ',' but found %q", nextToken)
+			r.appendErrorf("expected ',' but found %q", nextToken)
 			r.unshift()
 		}
 	}
 }
 
-// TODo: skip spaces
+// TODO: skip spaces.
 func (r *SchemaReader) ParseSchema() sixty.Schema {
 	token := r.shift()
 	switch token {
@@ -125,7 +135,7 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 			}
 			max, err := strconv.ParseInt(r.shift(), 10, 64)
 			if err != nil {
-				r.appendError("error while parsing int: %v", err)
+				r.appendErrorf("error while parsing int: %v", err)
 				return nil
 			}
 			r.skip("]")
@@ -147,7 +157,7 @@ func (r *SchemaReader) ParseSchema() sixty.Schema {
 		}
 		enumValue := r.shift()
 		if !IdentifierRegex.Match([]byte(enumValue)) {
-			r.appendError("%s is incorrect enum value", enumValue)
+			r.appendErrorf("%s is incorrect enum value", enumValue)
 			return nil
 		}
 		vals = append(vals, enumValue)

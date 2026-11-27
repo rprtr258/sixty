@@ -10,6 +10,8 @@ import (
 )
 
 func TestBttvDBEncode(t *testing.T) {
+	t.Parallel()
+
 	got, err := text.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
 	assert.NoError(t, err)
 	assert.Equal(t, `[{"Kappa",["KappaOwner1","KappaOwner2"]},{"PogChamp",["PogChampOwner1","PogChampOwner2"]}]`, got)

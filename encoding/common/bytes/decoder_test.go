@@ -10,6 +10,8 @@ import (
 )
 
 func TestBttvDBDecode(t *testing.T) {
+	t.Parallel()
+
 	got, err := bytes.Decode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, internal.BttvEmotesDBData, got)

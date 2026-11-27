@@ -1,10 +1,14 @@
 package internal
 
-import "github.com/rprtr258/sixty"
+import (
+	_ "embed"
+
+	"github.com/rprtr258/sixty"
+)
 
 // TODO: funcs to encode some primitive/logical types
 
-// TODO: name fields as in comments
+// TODO: name fields as in comments.
 var (
 	BttvEmotesDBSchemaString = `[](emote = :string,ids = []:string)`
 	BttvEmotesDBSchema       = sixty.List{Schema: sixty.Product{
@@ -62,7 +66,8 @@ var (
 		0x5c, 0x13, 0xdd, 0xdb, 0x99, 0x5c, 0x8c, 0x7b, 0x94, 0x1b, 0xd9, 0xd0, 0xda, 0x18, 0x5b, 0x5c,
 		0x13, 0xdd, 0xdb, 0x99, 0x5c, 0x8c, 0x80,
 	}
-	BttvEmotesDBJson = `[{"emote":"Kappa","ids":["KappaOwner1","KappaOwner2"]},{"emote":"PogChamp","ids":["PogChampOwner1","PogChampOwner2"]}]`
+	//go:embed bttv_emotes_db.json
+	BttvEmotesDBJson string
 )
 
 var (
@@ -78,5 +83,6 @@ var (
 			{"last_name", sixty.String{}},
 		}},
 	}
-	VKInfoSchemaString = `[group = (id = uint,alias = :string,name = :string),user = (id = uint,first_name = :string,last_name = :string)]`
+	//go:embed vk_info_schema.txt
+	VKInfoSchemaString string
 )
