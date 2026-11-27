@@ -74,7 +74,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	case sixty.List:
 		listLen := e.readUint()
 		res := make([]sixty.SchemaValue, 0, listLen)
-		for i := uint64(0); i < listLen; i++ {
+		for range listLen {
 			res = append(res, e.Read(tt.Schema))
 		}
 		return sixty.ListValue(res)

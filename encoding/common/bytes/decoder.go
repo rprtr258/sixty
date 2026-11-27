@@ -22,7 +22,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		stringLength := e.reader.ReadUint64()
 		sb := bytes.Buffer{}
 		sb.Grow(int(stringLength))
-		for i := uint64(0); i < stringLength; i++ {
+		for range stringLength {
 			sb.WriteRune(e.reader.ReadRune())
 		}
 		return sixty.StringValue(sb.String())
@@ -67,7 +67,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 	case sixty.List:
 		listLen := e.reader.ReadUint64()
 		res := make([]sixty.SchemaValue, 0, listLen)
-		for i := uint64(0); i < listLen; i++ {
+		for range listLen {
 			res = append(res, e.Read(tt.Schema))
 		}
 		return sixty.ListValue(res)
