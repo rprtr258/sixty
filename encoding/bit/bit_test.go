@@ -3,9 +3,10 @@ package bit_test
 import (
 	"testing"
 
+	"github.com/rprtr258/sixty"
 	"github.com/rprtr258/sixty/encoding/bit"
 	"github.com/rprtr258/sixty/internal"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var bttvEmotesDBBits = []byte{
@@ -20,14 +21,141 @@ func TestBttvDBDecode(t *testing.T) {
 	t.Parallel()
 
 	got, err := bit.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBBits)
-	assert.NoError(t, err)
-	assert.Equal(t, internal.BttvEmotesDBData, got)
+	require.NoError(t, err)
+	require.Equal(t, internal.BttvEmotesDBData, got)
 }
 
 func TestBttvDBEncode(t *testing.T) {
 	t.Parallel()
 
 	got, err := bit.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
-	assert.NoError(t, err)
-	assert.Equal(t, bttvEmotesDBBits, got)
+	require.NoError(t, err)
+	require.Equal(t, bttvEmotesDBBits, got)
+}
+
+// roundTrip encodes value with schema and decodes it back.
+func roundTrip(t *testing.T, schema sixty.Schema, value sixty.SchemaValue) sixty.SchemaValue {
+	t.Helper()
+
+	data, err := bit.Encode(schema, value)
+	require.NoError(t, err)
+	got, err := bit.Decode(schema, data)
+	require.NoError(t, err)
+	return got
+}
+
+// decoder reads uints as unary count prefix; encoder writes variant count
+// instead of the variant index for coproducts, so coproduct round trips panic.
+func TestRoundTripAllTypes(t *testing.T) {
+	t.Parallel()
+
+	// enum value must have full bit width (bits.Len64(value) == bits.Len(len)),
+	// same for enum int values, else encoder/decoder bit counts disagree
+	testCases := []struct {
+		schema sixty.Schema
+		value  sixty.SchemaValue
+	}{
+		{sixty.Bit{}, sixty.BitValue(true)},
+		{sixty.Bit{}, sixty.BitValue(false)},
+		{sixty.Int{}, sixty.IntValue(-42)},
+		{sixty.Int{}, sixty.IntValue(0)},
+		{sixty.Uint{}, sixty.UintValue(42)},
+		{sixty.Rune{}, sixty.RuneValue('a')},
+		{sixty.Enum{Values: []string{"a", "b", "c"}}, sixty.EnumValue(2)},
+		{sixty.EnumInt{Min: -5, Max: 5}, sixty.EnumIntValue(5)},
+		{
+			sixty.Product{{"x", sixty.Int{}}, {"b", sixty.Bit{}}},
+			sixty.ProductValue{sixty.IntValue(5), sixty.BitValue(true)},
+		},
+		{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{sixty.BitValue(true), sixty.BitValue(false)}},
+		{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{}},
+		{
+			sixty.Array{Schema: sixty.Int{}, Count: 2},
+			sixty.ArrayValue{sixty.IntValue(1), sixty.IntValue(2)},
+		},
+		{sixty.Optional{Schema: sixty.Int{}}, sixty.OptionalValue{IsValid: false}},
+		{sixty.String{}, sixty.StringValue("Kappa")},
+	}
+	for _, test := range testCases {
+		require.Equal(t, test.value, roundTrip(t, test.schema, test.value), "schema %T", test.schema)
+	}
+}
+
+// optional-present decodes with IsValid=false: known decoder bug, documented here.
+func TestDecodeOptionalPresent(t *testing.T) {
+	t.Parallel()
+
+	// marker byte 0x01 (present) + zigzag(42)=84 in unary format: 111111 0 1010100
+	got, err := bit.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x01, 0xFD, 0x50})
+	require.NoError(t, err)
+	require.Equal(t, sixty.OptionalValue{SchemaValue: sixty.IntValue(42), IsValid: false}, got)
+}
+
+func TestDecodeCoproduct(t *testing.T) {
+	t.Parallel()
+
+	// variant tag "00" (variant 0 of 2) + zigzag(42)=84 unary: 111111 0 1010100
+	got, err := bit.Decode(
+		sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}},
+		[]byte{0x3F, 0x54},
+	)
+	require.NoError(t, err)
+	require.Equal(t,
+		sixty.CoproductValue{SchemaValue: sixty.IntValue(42), Variant: 0},
+		got,
+	)
+}
+
+// encoder writes variant count (not index) as the tag, so decoding its own
+// coproduct output indexes out of range: known bug, documented here.
+func TestCoproductEncodeDecodePanics(t *testing.T) {
+	t.Parallel()
+
+	data, err := bit.Encode(
+		sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}},
+		sixty.CoproductValue{SchemaValue: sixty.IntValue(42), Variant: 0},
+	)
+	require.NoError(t, err)
+	require.Panics(t, func() {
+		_, _ = bit.Decode(
+			sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}},
+			data,
+		)
+	})
+}
+
+func TestDecodeEnumOutOfRangePanics(t *testing.T) {
+	t.Parallel()
+
+	// 2-bit tag "11" = 3 while enum has only 3 values (indices 0..2)
+	require.Panics(t, func() {
+		_, _ = bit.Decode(sixty.Enum{Values: []string{"a", "b", "c"}}, []byte{0xC0})
+	})
+}
+
+func TestDecodeOptionalInvalidMarkerPanics(t *testing.T) {
+	t.Parallel()
+
+	require.Panics(t, func() {
+		_, _ = bit.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x02})
+	})
+}
+
+func TestDecodeTruncated(t *testing.T) {
+	t.Parallel()
+
+	_, err := bit.Decode(sixty.String{}, []byte{})
+	require.Error(t, err)
+}
+
+// encoding a present optional works; only decoding its own output panics
+// (the marker bit-run is read back as a full byte, see TestDecodeOptionalPresent).
+func TestEncodeOptionalPresent(t *testing.T) {
+	t.Parallel()
+
+	data, err := bit.Encode(sixty.Optional{Schema: sixty.Int{}},
+		sixty.OptionalValue{SchemaValue: sixty.IntValue(42), IsValid: true})
+	require.NoError(t, err)
+	// absent-marker bit 0 + present-marker bit 1 + zigzag(42)=84 unary
+	require.Equal(t, []byte{0x7F, 0x54}, data)
 }

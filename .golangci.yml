@@ -79,6 +79,7 @@ linters:
       forbid:
         - pattern: ^print(ln)?$
         - pattern: ^fmt\.Errorf$
+        - pattern: ^assert\.
 
 formatters:
   enable:

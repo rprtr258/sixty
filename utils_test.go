@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/rprtr258/sixty"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var testCases = []struct {
@@ -30,7 +30,7 @@ func TestFromZigZag(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(fmt.Sprintf("from %d(%[1]x) %x", test.orig, test.zigZag), func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, test.orig, sixty.FromZigZag(test.zigZag))
+			require.Equal(t, test.orig, sixty.FromZigZag(test.zigZag))
 		})
 	}
 }
@@ -41,7 +41,25 @@ func TestToZigZag(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(fmt.Sprintf("to %d(%[1]x) %x", test.orig, test.zigZag), func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, test.zigZag, sixty.ToZigZag(test.orig))
+			require.Equal(t, test.zigZag, sixty.ToZigZag(test.orig))
 		})
 	}
+}
+
+func TestAssertSchemas(t *testing.T) {
+	t.Parallel()
+
+	tt, vv, ok := sixty.AssertSchemas[sixty.Int, sixty.IntValue](sixty.Int{}, sixty.IntValue(3))
+	require.True(t, ok)
+	require.Equal(t, sixty.Int{}, tt)
+	require.Equal(t, sixty.IntValue(3), vv)
+
+	_, _, ok = sixty.AssertSchemas[sixty.Int, sixty.IntValue](sixty.Bit{}, sixty.IntValue(3))
+	require.False(t, ok)
+
+	_, _, ok = sixty.AssertSchemas[sixty.Int, sixty.IntValue](sixty.Int{}, sixty.UintValue(3))
+	require.False(t, ok)
+
+	_, _, ok = sixty.AssertSchemas[sixty.Int, sixty.IntValue](sixty.Bit{}, sixty.UintValue(3))
+	require.False(t, ok)
 }
