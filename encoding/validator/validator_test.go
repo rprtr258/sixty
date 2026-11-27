@@ -34,50 +34,30 @@ func TestValidSchema(t *testing.T) {
 	require.Empty(t, v.Errs)
 }
 
-func TestInvalidEnumInt(t *testing.T) {
+func TestInvalidSchemas(t *testing.T) {
 	t.Parallel()
 
-	v := &validator.Validator{}
-	v.Write(sixty.EnumInt{Min: 5, Max: 5})
-	require.Len(t, v.Errs, 1)
-	require.Equal(t, "incorrect enum int, max must be greater than min: min=5, max=5", v.Errs[0].Error())
-}
-
-func TestInvalidProduct(t *testing.T) {
-	t.Parallel()
-
-	v := &validator.Validator{}
-	v.Write(sixty.Product{{"only", sixty.Bit{}}})
-	require.Len(t, v.Errs, 1)
-	require.Equal(t, "wrong product field count, must be at least 2: 1", v.Errs[0].Error())
-}
-
-func TestProductNestedError(t *testing.T) {
-	t.Parallel()
-
-	v := &validator.Validator{}
-	v.Write(sixty.Product{
-		{"ok", sixty.Int{}},
-		{"bad", sixty.Enum{Values: []string{"lonely"}}},
-	})
-	require.Len(t, v.Errs, 1)
-	require.Equal(t, "wrong enum Values count, must be at least 2: [lonely]", v.Errs[0].Error())
-}
-
-func TestInvalidCoproduct(t *testing.T) {
-	t.Parallel()
-
-	v := &validator.Validator{}
-	v.Write(sixty.Coproduct{{"only", sixty.Bit{}}})
-	require.Len(t, v.Errs, 1)
-	require.Equal(t, "wrong coproduct field count, must be at least 2: 1", v.Errs[0].Error())
-}
-
-func TestInvalidArray(t *testing.T) {
-	t.Parallel()
-
-	v := &validator.Validator{}
-	v.Write(sixty.Array{Schema: sixty.Bit{}, Count: 1})
-	require.Len(t, v.Errs, 1)
-	require.Equal(t, "wrong array length, must be at least 2: 1", v.Errs[0].Error())
+	testCases := []struct {
+		schema sixty.Schema
+		reason string
+	}{
+		{sixty.EnumInt{Min: 5, Max: 5}, "incorrect enum int, max must be greater than min: min=5, max=5"},
+		{sixty.Product{{"only", sixty.Bit{}}}, "wrong product field count, must be at least 2: 1"},
+		// error inside a nested schema field is reported, not swallowed
+		{
+			sixty.Product{
+				{"ok", sixty.Int{}},
+				{"bad", sixty.Enum{Values: []string{"lonely"}}},
+			},
+			"wrong enum Values count, must be at least 2: [lonely]",
+		},
+		{sixty.Coproduct{{"only", sixty.Bit{}}}, "wrong coproduct field count, must be at least 2: 1"},
+		{sixty.Array{Schema: sixty.Bit{}, Count: 1}, "wrong array length, must be at least 2: 1"},
+	}
+	for _, test := range testCases {
+		v := &validator.Validator{}
+		v.Write(test.schema)
+		require.Len(t, v.Errs, 1, "schema %T", test.schema)
+		require.Equal(t, test.reason, v.Errs[0].Error(), "schema %T", test.schema)
+	}
 }

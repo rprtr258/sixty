@@ -65,53 +65,52 @@ func TestAlgebraicEncode_VKInfo(t *testing.T) {
 	require.Equal(t, `(uint * :string * :string) + (uint * :string * :string)`, text.AlgebraicEncode(VKInfoSchema))
 }
 
-func TestParseEmpty(t *testing.T) {
-	t.Parallel()
-
-	_, err := text.ParseSchema("")
-	require.ErrorContains(t, err, "unexpected eof")
-	require.ErrorContains(t, err, "trying to shift when index is 0")
-}
-
-func TestParseAliasError(t *testing.T) {
-	t.Parallel()
-
-	got, err := text.ParseSchema("x = ")
-	require.Error(t, err)
-	require.Nil(t, got)
-}
-
 func TestParseErrors(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
 		schemaString string
-		reason       string
+		reasons      []string
 	}{
-		{"(5=int)", "5 is incorrect identifier"},
-		{"(a 5)", `expected "="`},
-		{"(a=int b=int)", `expected ',' but found "b"`},
-		{"{5}", "5 is incorrect enum value"},
-		{"[0..a]", "error while parsing int"},
-		{"[a..b]", `expected "="`},
-		{"(a=int]", `expected ',' but found "]"`},
+		{"", []string{"unexpected eof", "trying to shift when index is 0"}},
+		// trailing "=" declares an alias without a value
+		{"x = ", []string{`unknown alias ""`}},
+		{"(5=int)", []string{"5 is incorrect identifier"}},
+		{"(a 5)", []string{`expected "="`}},
+		{"(a=int b=int)", []string{`expected ',' but found "b"`}},
+		{"{5}", []string{"5 is incorrect enum value"}},
+		{"[0..a]", []string{"error while parsing int"}},
+		{"[a..b]", []string{`expected "="`}},
+		{"(a=int]", []string{`expected ',' but found "]"`}},
 	}
 	for _, test := range testCases {
 		_, err := text.ParseSchema(test.schemaString)
-		require.ErrorContains(t, err, test.reason, "schema %q", test.schemaString)
+		require.Error(t, err, "schema %q", test.schemaString)
+		for _, reason := range test.reasons {
+			require.ErrorContains(t, err, reason, "schema %q", test.schemaString)
+		}
 	}
-}
-
-func TestMustParsePanics(t *testing.T) {
-	t.Parallel()
-
-	require.Panics(t, func() { text.MustParse("5") })
 }
 
 func TestMustParse(t *testing.T) {
 	t.Parallel()
 
-	require.Equal(t, sixty.Int{}, text.MustParse("int"))
+	testCases := []struct {
+		schemaString string
+		want         sixty.Schema
+		panics       bool
+	}{
+		{"int", sixty.Int{}, false},
+		// "5" is not a valid schema, MustParse must panic
+		{"5", nil, true},
+	}
+	for _, test := range testCases {
+		if test.panics {
+			require.Panics(t, func() { text.MustParse(test.schemaString) }, "schema %q", test.schemaString)
+			continue
+		}
+		require.Equal(t, test.want, text.MustParse(test.schemaString), "schema %q", test.schemaString)
+	}
 }
 
 var allTypesSchemaText = sixty.Product{

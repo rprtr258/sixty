@@ -95,20 +95,27 @@ func TestDecodeUnsupportedSchema(t *testing.T) {
 	require.EqualError(t, err, "error at position 0: unsupported schema type json_test.unsupportedSchema")
 }
 
-func TestDecodeEmptyInput(t *testing.T) {
+func TestDecodeErrors(t *testing.T) {
 	t.Parallel()
 
-	// eof while expecting '[' triggers both the eof and the unshift-at-start errors
-	_, err := json.Codec.Decode(sixty.List{Schema: sixty.Bit{}}, "")
-	require.ErrorContains(t, err, "unexpected eof")
-	require.ErrorContains(t, err, "trying to unshift at start")
-}
-
-func TestDecodeTrailingGarbage(t *testing.T) {
-	t.Parallel()
-
-	_, err := json.Codec.Decode(sixty.Int{}, "1 2")
-	require.ErrorContains(t, err, "expected eof, found 2")
+	testCases := []struct {
+		schema  sixty.Schema
+		data    string
+		reasons []string
+	}{
+		// eof while expecting '[' triggers both the eof and the unshift-at-start errors
+		{sixty.List{Schema: sixty.Bit{}}, "", []string{"unexpected eof", "trying to unshift at start"}},
+		// trailing garbage after the top-level value
+		{sixty.Int{}, "1 2", []string{"expected eof, found 2"}},
+		{sixty.Array{Schema: sixty.Int{}, Count: 1}, "1", []string{`expected "["`}},
+		{sixty.Optional{Schema: sixty.Int{}}, "x", []string{errExpectedIntBare}},
+	}
+	for _, test := range testCases {
+		_, err := json.Codec.Decode(test.schema, test.data)
+		for _, reason := range test.reasons {
+			require.ErrorContains(t, err, reason, "schema %T data %s", test.schema, test.data)
+		}
+	}
 }
 
 func TestDecodePrimitiveErrors(t *testing.T) {
@@ -222,24 +229,10 @@ func TestDecodeArrayErrors(t *testing.T) {
 	}
 }
 
-func TestDecodeOptionalError(t *testing.T) {
-	t.Parallel()
-
-	_, err := json.Codec.Decode(sixty.Optional{Schema: sixty.Int{}}, "x")
-	require.ErrorContains(t, err, errExpectedIntBare)
-}
-
 func TestDecodeEmptyProductSchema(t *testing.T) {
 	t.Parallel()
 
 	got, err := json.Codec.Decode(sixty.Product{}, "{}")
 	require.NoError(t, err)
 	require.Equal(t, sixty.ProductValue{}, got)
-}
-
-func TestDecodeArrayMalformedOpen(t *testing.T) {
-	t.Parallel()
-
-	_, err := json.Codec.Decode(sixty.Array{Schema: sixty.Int{}, Count: 1}, "1")
-	require.ErrorContains(t, err, `expected "["`)
 }

@@ -16,25 +16,31 @@ func Test_ReadByte(t *testing.T) {
 	require.NoError(t, reader.Error)
 }
 
-func TestReadRuneMultiByte(t *testing.T) {
+func TestReadRune(t *testing.T) {
 	t.Parallel()
 
-	// 2-, 3- and 4-byte UTF-8 runes
-	for _, r := range []rune{'ж', '☺', '🦄'} {
-		reader := sixty.NewReader(bytes.NewBufferString(string(r)))
-		require.Equal(t, r, reader.ReadRune(), "rune %q", r)
-		require.NoError(t, reader.Error)
+	testCases := []struct {
+		input    string
+		wantRune rune
+		errPos   uint // non-zero: ReadRune must fail with TooLongRuneError at this position
+	}{
+		// 2-, 3- and 4-byte UTF-8 runes
+		{"ж", 'ж', 0},
+		{"☺", '☺', 0},
+		{"🦄", '🦄', 0},
+		// 0xF8 claims 5 continuation bytes, but UTF-8 runes are at most 4 bytes
+		{"\xF8", 0, 1},
 	}
-}
-
-func TestReadRuneTooLong(t *testing.T) {
-	t.Parallel()
-
-	// 0xF8 claims 5 continuation bytes, but UTF-8 runes are at most 4 bytes
-	reader := sixty.NewReader(bytes.NewBuffer([]byte{0xF8}))
-	require.Equal(t, rune(0), reader.ReadRune())
-	var tooLong sixty.TooLongRuneError
-	require.ErrorAs(t, reader.Error, &tooLong)
-	require.Equal(t, uint(1), tooLong.Pos)
-	require.Equal(t, "TOO LONG RUNE at 1", tooLong.Error())
+	for _, test := range testCases {
+		reader := sixty.NewReader(bytes.NewBufferString(test.input))
+		require.Equal(t, test.wantRune, reader.ReadRune(), "input %q", test.input)
+		if test.errPos == 0 {
+			require.NoError(t, reader.Error, "input %q", test.input)
+			continue
+		}
+		var tooLong sixty.TooLongRuneError
+		require.ErrorAs(t, reader.Error, &tooLong, "input %q", test.input)
+		require.Equal(t, test.errPos, tooLong.Pos, "input %q", test.input)
+		require.Equal(t, "TOO LONG RUNE at 1", tooLong.Error(), "input %q", test.input)
+	}
 }

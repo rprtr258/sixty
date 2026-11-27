@@ -10,31 +10,36 @@ import (
 // fixed-width strings.
 const idLength = 8
 
-// TestCase pairs a schema with a value valid for that schema.
-type TestCase struct {
+// TestCases covers every primitive and logical type; codecs extend
+// the list with their composite/codec-specific cases.
+var TestCases = []struct {
 	Schema sixty.Schema
 	Value  sixty.SchemaValue
-}
-
-// PrimitiveTestCases covers every primitive and logical type; codecs extend
-// the list with their composite/codec-specific cases.
-func PrimitiveTestCases() []TestCase {
-	return []TestCase{
-		{sixty.Bit{}, sixty.BitValue(true)},
-		{sixty.Bit{}, sixty.BitValue(false)},
-		{sixty.Int{}, sixty.IntValue(-42)},
-		{sixty.Int{}, sixty.IntValue(0)},
-		{sixty.Uint{}, sixty.UintValue(42)},
-		{sixty.Uint{}, sixty.UintValue(0)},
-		{sixty.Rune{}, sixty.RuneValue('a')},
-		{sixty.Rune{}, sixty.RuneValue('ж')},
-		{sixty.Enum{Values: []string{"a", "b", "c"}}, sixty.EnumValue(0)},
-		{sixty.Enum{Values: []string{"a", "b", "c"}}, sixty.EnumValue(2)},
-		{sixty.EnumInt{Min: -5, Max: 5}, sixty.EnumIntValue(-5)},
-		{sixty.EnumInt{Min: -5, Max: 5}, sixty.EnumIntValue(5)},
-		{sixty.String{}, sixty.StringValue("")},
-		{sixty.String{}, sixty.StringValue("ёжик")},
-	}
+}{
+	{sixty.Bit{}, sixty.BitValue(true)},
+	{sixty.Bit{}, sixty.BitValue(false)},
+	{sixty.Int{}, sixty.IntValue(-42)},
+	{sixty.Int{}, sixty.IntValue(0)},
+	{sixty.Uint{}, sixty.UintValue(42)},
+	{sixty.Uint{}, sixty.UintValue(0)},
+	{sixty.Rune{}, sixty.RuneValue('a')},
+	{sixty.Rune{}, sixty.RuneValue('ж')},
+	{sixty.Enum{Values: []string{"a", "b", "c"}}, sixty.EnumValue(0)},
+	{sixty.Enum{Values: []string{"a", "b", "c"}}, sixty.EnumValue(2)},
+	{sixty.EnumInt{Min: -5, Max: 5}, sixty.EnumIntValue(-5)},
+	{sixty.EnumInt{Min: -5, Max: 5}, sixty.EnumIntValue(5)},
+	{sixty.String{}, sixty.StringValue("")},
+	{sixty.String{}, sixty.StringValue("ёжик")},
+	{sixty.Product{{"x", sixty.Int{}}, {"b", sixty.Bit{}}}, sixty.ProductValue{sixty.IntValue(5), sixty.BitValue(true)}},
+	{sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}}, sixty.CoproductValue{SchemaValue: sixty.StringValue("hi"), Variant: 1}},
+	{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{sixty.BitValue(true), sixty.BitValue(false)}},
+	{sixty.Array{Schema: sixty.Int{}, Count: 2}, sixty.ArrayValue{sixty.IntValue(1), sixty.IntValue(2)}},
+	{sixty.Optional{Schema: sixty.Int{}}, sixty.OptionalValue{SchemaValue: sixty.IntValue(7), IsValid: true}},
+	{sixty.Optional{Schema: sixty.Int{}}, sixty.OptionalValue{IsValid: false}},
+	{sixty.Coproduct{{"int", sixty.Int{}}, {"string", sixty.String{}}}, sixty.CoproductValue{SchemaValue: sixty.IntValue(42), Variant: 0}},
+	{sixty.Coproduct{{"int", sixty.Int{}}, {"string", sixty.String{}}}, sixty.CoproductValue{SchemaValue: sixty.StringValue("hi"), Variant: 1}},
+	{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{sixty.BitValue(true)}},
+	{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{}},
 }
 
 // idArray splits an id string into the fixed-length rune array value.

@@ -173,52 +173,24 @@ func TestDecodeProductNestedPathError(t *testing.T) {
 	require.EqualError(t, err, `field "outer": field "inner": expected bit value, got sixty.IntValue`)
 }
 
-func TestDecodeCoproductVariantOutOfRange(t *testing.T) {
+func TestDecodeErrors(t *testing.T) {
 	t.Parallel()
 
-	var got any
-	err := common.Decode(
-		sixty.Coproduct{{"a", sixty.Int{}}},
-		sixty.CoproductValue{Variant: 1, SchemaValue: sixty.IntValue(1)},
-		&got,
-	)
-	require.EqualError(t, err, "coproduct variant 1 out of range 1")
-}
-
-func TestDecodeArrayLengthMismatch(t *testing.T) {
-	t.Parallel()
-
-	var got []int64
-	err := common.Decode(
-		sixty.Array{Schema: sixty.Int{}, Count: 2},
-		sixty.ArrayValue{sixty.IntValue(1)},
-		&got,
-	)
-	require.EqualError(t, err, "expected array value of 2 elements, got 1")
-}
-
-func TestDecodeArrayElementPathError(t *testing.T) {
-	t.Parallel()
-
-	var got []bool
-	err := common.Decode(
-		sixty.Array{Schema: sixty.Bit{}, Count: 2},
-		sixty.ArrayValue{sixty.BitValue(true), sixty.IntValue(0)},
-		&got,
-	)
-	require.EqualError(t, err, "element 1: expected bit value, got sixty.IntValue")
-}
-
-func TestDecodeListElementPathError(t *testing.T) {
-	t.Parallel()
-
-	var got []bool
-	err := common.Decode(
-		sixty.List{Schema: sixty.Bit{}},
-		sixty.ListValue{sixty.IntValue(0)},
-		&got,
-	)
-	require.EqualError(t, err, "element 0: expected bit value, got sixty.IntValue")
+	testCases := []struct {
+		schema sixty.Schema
+		value  sixty.SchemaValue
+		target any
+		reason string
+	}{
+		{sixty.Coproduct{{"a", sixty.Int{}}}, sixty.CoproductValue{Variant: 1, SchemaValue: sixty.IntValue(1)}, new(any), "coproduct variant 1 out of range 1"},
+		{sixty.Array{Schema: sixty.Int{}, Count: 2}, sixty.ArrayValue{sixty.IntValue(1)}, new([]int64), "expected array value of 2 elements, got 1"},
+		{sixty.Array{Schema: sixty.Bit{}, Count: 2}, sixty.ArrayValue{sixty.BitValue(true), sixty.IntValue(0)}, new([]bool), "element 1: expected bit value, got sixty.IntValue"},
+		{sixty.List{Schema: sixty.Bit{}}, sixty.ListValue{sixty.IntValue(0)}, new([]bool), "element 0: expected bit value, got sixty.IntValue"},
+	}
+	for _, test := range testCases {
+		err := common.Decode(test.schema, test.value, test.target)
+		require.EqualError(t, err, test.reason, "schema %T", test.schema)
+	}
 }
 
 func TestEncodeKindMismatches(t *testing.T) {
@@ -255,11 +227,24 @@ func TestEncodeKindMismatches(t *testing.T) {
 	}
 }
 
-func TestEncodeProductFieldCountMismatch(t *testing.T) {
+func TestEncodeErrors(t *testing.T) {
 	t.Parallel()
 
-	_, err := common.Encode(sixty.Product{{"x", sixty.Int{}}}, struct{ X, Y int64 }{1, 2})
-	require.EqualError(t, err, "expected struct with 1 fields, got 2")
+	testCases := []struct {
+		schema sixty.Schema
+		value  any
+		reason string
+	}{
+		{sixty.Product{{"x", sixty.Int{}}}, struct{ X, Y int64 }{1, 2}, "expected struct with 1 fields, got 2"},
+		{sixty.Product{{"v", sixty.Coproduct{{"x", sixty.String{}}}}}, struct{ V any }{int64(42)}, `field "v": no coproduct variant matches value of kind int64`},
+		{sixty.Array{Schema: sixty.Int{}, Count: 2}, []int64{1}, "expected array of 2 elements, got 1"},
+		{sixty.Array{Schema: sixty.Bit{}, Count: 2}, []string{"a", "b"}, "element 0: expected bool, got string"},
+		{sixty.List{Schema: sixty.Bit{}}, []string{"a"}, "element 0: expected bool, got string"},
+	}
+	for _, test := range testCases {
+		_, err := common.Encode(test.schema, test.value)
+		require.EqualError(t, err, test.reason, "schema %T", test.schema)
+	}
 }
 
 func TestEncodeProductNestedPathError(t *testing.T) {
@@ -303,37 +288,6 @@ func TestEncodeCoproductFirstMatchWins(t *testing.T) {
 		sixty.ProductValue{sixty.CoproductValue{SchemaValue: sixty.StringValue("hi"), Variant: 1}},
 		got,
 	)
-}
-
-func TestEncodeCoproductNoMatch(t *testing.T) {
-	t.Parallel()
-
-	_, err := common.Encode(
-		sixty.Product{{"v", sixty.Coproduct{{"x", sixty.String{}}}}},
-		struct{ V any }{int64(42)},
-	)
-	require.EqualError(t, err, `field "v": no coproduct variant matches value of kind int64`)
-}
-
-func TestEncodeArrayLengthMismatch(t *testing.T) {
-	t.Parallel()
-
-	_, err := common.Encode(sixty.Array{Schema: sixty.Int{}, Count: 2}, []int64{1})
-	require.EqualError(t, err, "expected array of 2 elements, got 1")
-}
-
-func TestEncodeArrayElementPathError(t *testing.T) {
-	t.Parallel()
-
-	_, err := common.Encode(sixty.Array{Schema: sixty.Bit{}, Count: 2}, []string{"a", "b"})
-	require.EqualError(t, err, "element 0: expected bool, got string")
-}
-
-func TestEncodeListElementPathError(t *testing.T) {
-	t.Parallel()
-
-	_, err := common.Encode(sixty.List{Schema: sixty.Bit{}}, []string{"a"})
-	require.EqualError(t, err, "element 0: expected bool, got string")
 }
 
 func TestDecodeArrayIntoFixedArray(t *testing.T) {
