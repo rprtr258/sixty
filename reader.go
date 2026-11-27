@@ -110,7 +110,7 @@ func (r *Reader) ReadRune() (u rune) {
 func (r *Reader) ReadLengthString() string {
 	resLen := r.ReadUint64()
 	runes := make([]rune, 0, resLen)
-	for i := uint64(0); i < resLen; i++ {
+	for range resLen {
 		runes = append(runes, r.ReadRune())
 	}
 	return string(runes)

@@ -60,7 +60,7 @@ func (e *Encoder) Write(t sixty.Schema, v sixty.SchemaValue) {
 	} else if tt, vv, ok := sixty.AssertSchemas[sixty.List, sixty.ListValue](t, v); ok {
 		e.writer.WriteString("[\n")
 		e.indent++
-		for i := 0; i < len(vv); i++ {
+		for i := range vv {
 			e.Write(tt.Schema, vv[i])
 			e.writer.WriteString(",\n")
 		}

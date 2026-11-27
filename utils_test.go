@@ -28,7 +28,6 @@ func TestFromZigZag(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range testCases {
-		test := test
 		t.Run(fmt.Sprintf("from %d(%[1]x) %x", test.orig, test.zigZag), func(t *testing.T) {
 			t.Parallel()
 			assert.Equal(t, test.orig, sixty.FromZigZag(test.zigZag))
@@ -40,7 +39,6 @@ func TestToZigZag(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range testCases {
-		test := test
 		t.Run(fmt.Sprintf("to %d(%[1]x) %x", test.orig, test.zigZag), func(t *testing.T) {
 			t.Parallel()
 			assert.Equal(t, test.zigZag, sixty.ToZigZag(test.orig))

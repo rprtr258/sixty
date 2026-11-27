@@ -58,7 +58,7 @@ func (e *Decoder) Read(t sixty.Schema, rv reflect.Value) {
 	} else if tt, ok := t.(sixty.List); ok && rv.Kind() == reflect.Slice {
 		listLen := int(e.reader.ReadUint64())
 		lst := reflect.MakeSlice(rv.Type(), listLen, listLen)
-		for i := 0; i < listLen; i++ {
+		for i := range listLen {
 			e.Read(tt.Schema, lst.Index(i))
 		}
 		rv.Set(lst)
