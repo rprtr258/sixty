@@ -7,6 +7,13 @@ test: TEST_DIR?=...
 test: # run unit tests
 	go test ./$(TEST_DIR) -count=1
 
+.PHONY: cover
+cover: TEST_DIR?=...
+cover: COVER_OUT?=/tmp/sixty-cover.out
+cover: # run unit tests and print single total coverage %
+	go test ./$(TEST_DIR) -count=1 -coverpkg=./... -coverprofile=$(COVER_OUT)
+	@go tool cover -func=$(COVER_OUT) | tail -n 1
+
 .PHONY: lint
 lint: # run linter
 	golangci-lint run
