@@ -27,6 +27,7 @@ func (w *Writer) WriteByte(b byte) {
 	if _, err := w.writer.Write([]byte{b}); err != nil {
 		w.Error = err
 	}
+	return
 }
 
 func (w *Writer) WriteRune(r rune) {

@@ -34,7 +34,7 @@ func TestDecode_BttvDB(t *testing.T) {
 }
 
 func TestDecode_Coproduct(t *testing.T) {
-	type s interface{}
+	type s any
 	var got s
 	err := stream.Decode(sixty.Coproduct{
 		{"int", sixty.Int{}},

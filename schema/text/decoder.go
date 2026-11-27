@@ -80,15 +80,16 @@ func (r *SchemaReader) ParseCommaSeparatedSchemas(endToken string) (res []sixty.
 			Schema: schema,
 		})
 		nextToken := r.shift()
-		if nextToken == endToken {
+		switch nextToken {
+		case endToken:
 			return
-		} else if nextToken == "," {
+		case ",":
 			maybeEnd := r.shift()
 			if maybeEnd == endToken {
 				return
 			}
 			r.unshift()
-		} else {
+		default:
 			r.appendError("expected ',' but found %q", nextToken)
 			r.unshift()
 		}
