@@ -11,6 +11,8 @@ import (
 )
 
 func TestDecode_BttvDB(t *testing.T) {
+	t.Parallel()
+
 	type entry struct {
 		Emote string
 		Ids   []string
@@ -34,6 +36,8 @@ func TestDecode_BttvDB(t *testing.T) {
 }
 
 func TestDecode_Coproduct(t *testing.T) {
+	t.Parallel()
+
 	type s any
 	var got s
 	err := stream.Decode(sixty.Coproduct{

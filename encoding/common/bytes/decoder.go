@@ -11,8 +11,8 @@ type Decoder struct {
 	reader sixty.Reader
 }
 
-// TODO: error
-func (e *Decoder) appendError(format string, args ...any) {
+// TODO: error handling.
+func (e *Decoder) appendErrorf(format string, args ...any) {
 	panic(fmt.Sprintf("error at position %d: ", e.reader.Pos()) + fmt.Sprintf(format, args...))
 }
 
@@ -34,7 +34,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		case 1:
 			return sixty.BitValue(true)
 		default:
-			e.appendError("expected bit which is either 0 or 1, found: %d", b)
+			e.appendErrorf("expected bit which is either 0 or 1, found: %d", b)
 		}
 	case sixty.Int:
 		return sixty.IntValue(e.reader.ReadUint64())
@@ -48,7 +48,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		if n < uint64(len(tt.Values)) {
 			return sixty.EnumValue(n)
 		}
-		e.appendError("found %d'th enum value while there are only %d of them", n, len(tt.Values))
+		e.appendErrorf("found %d'th enum value while there are only %d of them", n, len(tt.Values))
 	case sixty.EnumInt:
 		n := e.reader.ReadUint64()
 		return sixty.EnumIntValue(int64(n) + tt.Min)
@@ -88,7 +88,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 				IsValid:     false,
 			}
 		default:
-			e.appendError("option variant must be either 0 or 1, but it is %d", isPresent)
+			e.appendErrorf("option variant must be either 0 or 1, but it is %d", isPresent)
 		}
 	default:
 		panic("something unimplemented")

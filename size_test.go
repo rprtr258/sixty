@@ -10,6 +10,8 @@ import (
 )
 
 func TestBttvDB(t *testing.T) {
+	t.Parallel()
+
 	got := sixty.SchemaSize(internal.BttvEmotesDBSchema)
 	assert.Equal(t, sixty.Inf, got)
 }

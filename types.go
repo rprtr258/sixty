@@ -20,11 +20,13 @@ type LogicalKind string
 
 const (
 	StringKind LogicalKind = ":string"
-	// Date
-	// Datetime
-	//    millis,micros,nanos
-	// []bit
-	// [n]bit
+	/* TODO:
+	Date
+	Datetime
+		millis,micros,nanos
+	[]bit
+	[n]bit
+	*/
 )
 
 type Schema interface {
@@ -164,7 +166,7 @@ type OptionalValue struct {
 func (OptionalValue) isSchemaValue() {}
 func (OptionalValue) Kind() Kind     { return OptionalKind }
 
-// TODO: predefined value for struct{} schemas
+// TODO: predefined value for struct{} schemas.
 type String struct{}
 
 func (s String) Kind() Kind            { return ListKind }

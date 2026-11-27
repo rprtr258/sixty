@@ -1,0 +1,88 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - containedctx
+    - contextcheck
+    - cyclop
+    - decorder
+    - dogsled
+    - dupl
+    - durationcheck
+    - err113
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    # - godox
+    - gomoddirectives
+    - goprintffuncname
+    - govet
+    - grouper
+    - importas
+    - ineffassign
+    - lll
+    - maintidx
+    - makezero
+    - misspell
+    - modernize
+    - nestif
+    - nilerr
+    - nilnil
+    - noctx
+    - nolintlint
+    - nosprintfhostport
+    - paralleltest
+    - prealloc
+    - promlinter
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - unconvert
+    - unparam
+    - unused
+    - wastedassign
+    - whitespace
+    - wrapcheck
+  settings:
+    govet:
+      # Reader/Writer deliberately deviate from io standard signatures (error-field API);
+      # composite literals in tests are unkeyed by choice.
+      disable:
+        - composites
+        - stdmethods
+    cyclop:
+      max-complexity: 25
+    funlen:
+      statements: 90
+      lines: 102
+    revive:
+      directives:
+        - exclude:
+            - exported
+    nestif:
+      min-complexity: 19
+    forbidigo:
+      forbid:
+        - pattern: ^print(ln)?$
+        - pattern: ^fmt\.Errorf$
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports

@@ -10,14 +10,20 @@ import (
 )
 
 func TestEncode_BttvDB(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, internal.BttvEmotesDBSchemaString, text.Encode(internal.BttvEmotesDBSchema))
 }
 
 func TestEncode_VKInfo(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, internal.VKInfoSchemaString, text.Encode(internal.VKInfoSchema))
 }
 
 func TestPrettyEncode_BttvDB(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, `[](
   emote = :string,
   ids = []:string,
@@ -25,9 +31,13 @@ func TestPrettyEncode_BttvDB(t *testing.T) {
 }
 
 func TestAlgebraicEncode_BttvDB(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, `[](:string * []:string)`, text.AlgebraicEncode(internal.BttvEmotesDBSchema))
 }
 
 func TestAlgebraicEncode_VKInfo(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, `(uint * :string * :string) + (uint * :string * :string)`, text.AlgebraicEncode(internal.VKInfoSchema))
 }

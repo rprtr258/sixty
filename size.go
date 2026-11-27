@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-// Size is either size of struct value (>= 0) or infinity (really -1)
+// Size is either size of struct value (>= 0) or infinity (really -1).
 type Size int
 
 const Inf Size = -1

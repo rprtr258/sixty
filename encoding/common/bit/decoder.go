@@ -13,7 +13,7 @@ type Decoder struct {
 	buffer *bitio.CountReader
 }
 
-// TODO: compare encodings, choose efficient
+// TODO: compare encodings, choose efficient.
 func (e *Decoder) readUint() uint64 {
 	n := 1
 	for e.buffer.TryReadBool() {
@@ -27,8 +27,8 @@ func (e *Decoder) readInt() int64 {
 	return sixty.FromZigZag(e.readUint())
 }
 
-// TODO: error
-func (e *Decoder) appendError(format string, args ...any) {
+// TODO: error handling.
+func (e *Decoder) appendErrorf(format string, args ...any) {
 	panic(fmt.Sprintf("error at position %d: ", e.buffer.BitsCount) + fmt.Sprintf(format, args...))
 }
 
@@ -55,7 +55,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 		if n < uint64(len(tt.Values)) {
 			return sixty.EnumValue(n)
 		}
-		e.appendError("found %d'th enum value while there are only %d of them", n, len(tt.Values))
+		e.appendErrorf("found %d'th enum value while there are only %d of them", n, len(tt.Values))
 	case sixty.EnumInt:
 		n := e.buffer.TryReadBits(uint8(bits.Len64(uint64(tt.Max - tt.Min))))
 		return sixty.EnumIntValue(int64(n) + tt.Min)
@@ -95,7 +95,7 @@ func (e *Decoder) Read(t sixty.Schema) sixty.SchemaValue {
 				IsValid:     false,
 			}
 		default:
-			e.appendError("option variant must be either 0 or 1, but it is %d", isPresent)
+			e.appendErrorf("option variant must be either 0 or 1, but it is %d", isPresent)
 		}
 	default:
 		panic("something unimplemented")
