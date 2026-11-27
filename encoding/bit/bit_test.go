@@ -3,7 +3,7 @@ package bit_test
 import (
 	"testing"
 
-	"github.com/rprtr258/sixty/encoding/common/bit"
+	"github.com/rprtr258/sixty/encoding/bit"
 	"github.com/rprtr258/sixty/internal"
 	"github.com/stretchr/testify/assert"
 )
