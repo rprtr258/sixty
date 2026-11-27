@@ -86,14 +86,14 @@ func (r *Reader) ReadRune() (u rune) {
 	switch leadingOnes(b0) {
 	case 0:
 		return rune(b0)
-	case 1:
+	case 2:
 		b1 := r.ReadByte()
 		return rune(b0&0x3F)<<6 | rune(b1&maskx)
-	case 2:
+	case 3:
 		b1 := r.ReadByte()
 		b2 := r.ReadByte()
 		return rune(b0&0x1F)<<12 | rune(b1&maskx)<<6 | rune(b2&maskx)
-	case 3:
+	case 4:
 		b1 := r.ReadByte()
 		b2 := r.ReadByte()
 		b3 := r.ReadByte()
