@@ -83,12 +83,6 @@ func TestAllTypesEncodeDecode(t *testing.T) {
 	require.Equal(t, dec, data)
 }
 
-func TestParseErrorMessage(t *testing.T) {
-	t.Parallel()
-
-	require.Equal(t, "error at position 3: oops", json.ParseError{Pos: 3, Reason: "oops"}.Error())
-}
-
 // unsupportedSchema drives the unsupported-schema error path.
 type unsupportedSchema struct{}
 

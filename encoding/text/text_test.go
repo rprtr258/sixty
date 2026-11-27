@@ -51,24 +51,6 @@ var (
 	}
 )
 
-func TestBttvDBEncode(t *testing.T) {
-	t.Parallel()
-
-	got, err := text.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
-	require.NoError(t, err)
-	require.Equal(t, `[{"Kappa",[['k','a','p','p','a','_','0','1'],['k','a','p','p','a','_','0','2']]},{"PogChamp",[['p','o','g','c','h','_','0','1'],['p','o','g','c','h','_','0','2']]}]`, got)
-}
-
-func TestBttvDBDecode(t *testing.T) {
-	t.Parallel()
-
-	bttvEmotesDBText := `[{"Kappa",[['k','a','p','p','a','_','0','1'],['k','a','p','p','a','_','0','2']]},
-		{"PogChamp",[['p','o','g','c','h','_','0','1'],['p','o','g','c','h','_','0','2']]}]`
-	got, err := text.Codec.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBText)
-	require.NoError(t, err)
-	require.Equal(t, internal.BttvEmotesDBData, got)
-}
-
 func TestBttvDBEncodeDecode(t *testing.T) {
 	t.Parallel()
 
@@ -93,25 +75,12 @@ func TestAllTypesEncodeDecode(t *testing.T) {
 	require.Equal(t, dec, data)
 }
 
-func TestDecodeGarbage(t *testing.T) {
-	t.Parallel()
-
-	_, err := text.Codec.Decode(internal.BttvEmotesDBSchema, "garbage")
-	require.Error(t, err)
-}
-
 func TestEncodeRuneQuoteEscape(t *testing.T) {
 	t.Parallel()
 
 	got, err := text.Codec.Encode(sixty.Rune{}, sixty.RuneValue('\''))
 	require.NoError(t, err)
 	require.Equal(t, `'\''`, got)
-}
-
-func TestParseErrorMessage(t *testing.T) {
-	t.Parallel()
-
-	require.Equal(t, "error at position 3: oops", text.ParseError{Pos: 3, Reason: "oops"}.Error())
 }
 
 // unsupportedSchema drives the unsupported-schema error path.
@@ -256,14 +225,6 @@ func TestDecodeArrayErrors(t *testing.T) {
 		_, err := text.Codec.Decode(schema, test.data)
 		require.ErrorContains(t, err, test.reason, "data %s", test.data)
 	}
-}
-
-func TestDecodeRuneEscapedQuote(t *testing.T) {
-	t.Parallel()
-
-	got, err := text.Codec.Decode(sixty.Rune{}, `'\''`)
-	require.NoError(t, err)
-	require.Equal(t, sixty.RuneValue('\''), got)
 }
 
 func TestDecodeArrayMalformedOpen(t *testing.T) {

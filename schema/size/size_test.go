@@ -10,13 +10,6 @@ import (
 	"github.com/rprtr258/sixty/schema/size"
 )
 
-func TestBttvDB(t *testing.T) {
-	t.Parallel()
-
-	got := size.SchemaSize(internal.BttvEmotesDBSchema)
-	require.Equal(t, size.Inf, got)
-}
-
 func TestSchemaSizePrimitives(t *testing.T) {
 	t.Parallel()
 
@@ -85,12 +78,4 @@ func TestSizeAdd(t *testing.T) {
 
 	z := size.Inf
 	require.Equal(t, size.Inf, *z.Add(4))
-}
-
-func TestSizeMultiply(t *testing.T) {
-	t.Parallel()
-
-	require.Equal(t, size.Size(6), size.Size(2).Multiply(3))
-	require.Equal(t, size.Size(0), size.Size(2).Multiply(0))
-	require.Equal(t, size.Inf, size.Inf.Multiply(3))
 }

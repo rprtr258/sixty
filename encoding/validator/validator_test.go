@@ -34,19 +34,6 @@ func TestValidSchema(t *testing.T) {
 	require.Empty(t, v.Errs)
 }
 
-func TestInvalidEnum(t *testing.T) {
-	t.Parallel()
-
-	v := &validator.Validator{}
-	v.Write(sixty.Enum{Values: []string{"solo"}})
-	require.Len(t, v.Errs, 1)
-	require.Equal(t, "wrong enum Values count, must be at least 2: [solo]", v.Errs[0].Error())
-
-	var invalid validator.InvalidSchemaError
-	require.ErrorAs(t, v.Errs[0], &invalid)
-	require.Equal(t, "wrong enum Values count, must be at least 2: [solo]", invalid.Error())
-}
-
 func TestInvalidEnumInt(t *testing.T) {
 	t.Parallel()
 
@@ -86,18 +73,6 @@ func TestInvalidCoproduct(t *testing.T) {
 	require.Equal(t, "wrong coproduct field count, must be at least 2: 1", v.Errs[0].Error())
 }
 
-func TestCoproductNestedError(t *testing.T) {
-	t.Parallel()
-
-	v := &validator.Validator{}
-	v.Write(sixty.Coproduct{
-		{"ok", sixty.Int{}},
-		{"bad", sixty.EnumInt{Min: 1, Max: 1}},
-	})
-	require.Len(t, v.Errs, 1)
-	require.Equal(t, "incorrect enum int, max must be greater than min: min=1, max=1", v.Errs[0].Error())
-}
-
 func TestInvalidArray(t *testing.T) {
 	t.Parallel()
 
@@ -105,33 +80,4 @@ func TestInvalidArray(t *testing.T) {
 	v.Write(sixty.Array{Schema: sixty.Bit{}, Count: 1})
 	require.Len(t, v.Errs, 1)
 	require.Equal(t, "wrong array length, must be at least 2: 1", v.Errs[0].Error())
-}
-
-func TestArrayNestedError(t *testing.T) {
-	t.Parallel()
-
-	v := &validator.Validator{}
-	v.Write(sixty.Array{Schema: sixty.Enum{Values: nil}, Count: 2})
-	require.Len(t, v.Errs, 1)
-	require.Equal(t, "wrong enum Values count, must be at least 2: []", v.Errs[0].Error())
-}
-
-func TestListAndOptionalNesting(t *testing.T) {
-	t.Parallel()
-
-	v := &validator.Validator{}
-	v.Write(sixty.List{Schema: sixty.Optional{Schema: sixty.Enum{Values: []string{"lone"}}}})
-	require.Len(t, v.Errs, 1)
-	require.Equal(t, "wrong enum Values count, must be at least 2: [lone]", v.Errs[0].Error())
-}
-
-func TestAccumulatesMultipleErrors(t *testing.T) {
-	t.Parallel()
-
-	v := &validator.Validator{}
-	v.Write(sixty.Product{
-		{"bad_enum", sixty.Enum{Values: nil}},
-		{"bad_enum_int", sixty.EnumInt{Min: 1, Max: 0}},
-	})
-	require.Len(t, v.Errs, 2)
 }

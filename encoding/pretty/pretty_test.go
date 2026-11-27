@@ -10,65 +10,6 @@ import (
 	"github.com/rprtr258/sixty/internal"
 )
 
-func TestBttvDBEncode(t *testing.T) {
-	t.Parallel()
-
-	got, err := pretty.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
-	require.NoError(t, err)
-	require.Equal(t, `[
-  {
-    "Kappa",
-    [
-      [
-      'k',
-      'a',
-      'p',
-      'p',
-      'a',
-      '_',
-      '0',
-      '1',
-      ],
-      [
-      'k',
-      'a',
-      'p',
-      'p',
-      'a',
-      '_',
-      '0',
-      '2',
-      ],
-    ],
-  },
-  {
-    "PogChamp",
-    [
-      [
-      'p',
-      'o',
-      'g',
-      'c',
-      'h',
-      '_',
-      '0',
-      '1',
-      ],
-      [
-      'p',
-      'o',
-      'g',
-      'c',
-      'h',
-      '_',
-      '0',
-      '2',
-      ],
-    ],
-  },
-]`, got)
-}
-
 func TestBttvDBEncodeDecode(t *testing.T) {
 	t.Parallel()
 

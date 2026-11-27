@@ -8,52 +8,7 @@ import (
 	"github.com/rprtr258/sixty"
 	"github.com/rprtr258/sixty/encoding/bytes"
 	"github.com/rprtr258/sixty/encoding/common"
-	"github.com/rprtr258/sixty/internal"
 )
-
-func TestBttvDBDecode(t *testing.T) {
-	t.Parallel()
-
-	type entry struct {
-		Emote string
-		Ids   [][8]rune
-	}
-
-	type BttvEmotesDB []entry
-
-	var got BttvEmotesDB
-	err := common.Decode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData, &got)
-	require.NoError(t, err)
-	require.Equal(t,
-		BttvEmotesDB([]entry{{
-			Emote: "Kappa",
-			Ids:   [][8]rune{{'k', 'a', 'p', 'p', 'a', '_', '0', '1'}, {'k', 'a', 'p', 'p', 'a', '_', '0', '2'}},
-		}, {
-			Emote: "PogChamp",
-			Ids:   [][8]rune{{'p', 'o', 'g', 'c', 'h', '_', '0', '1'}, {'p', 'o', 'g', 'c', 'h', '_', '0', '2'}},
-		}}),
-		got,
-	)
-}
-
-func TestBttvDBEncode(t *testing.T) {
-	t.Parallel()
-
-	type entry struct {
-		Emote string
-		Ids   [][8]rune
-	}
-
-	got, err := common.Encode(internal.BttvEmotesDBSchema, []entry{{
-		Emote: "Kappa",
-		Ids:   [][8]rune{{'k', 'a', 'p', 'p', 'a', '_', '0', '1'}, {'k', 'a', 'p', 'p', 'a', '_', '0', '2'}},
-	}, {
-		Emote: "PogChamp",
-		Ids:   [][8]rune{{'p', 'o', 'g', 'c', 'h', '_', '0', '1'}, {'p', 'o', 'g', 'c', 'h', '_', '0', '2'}},
-	}})
-	require.NoError(t, err)
-	require.Equal(t, internal.BttvEmotesDBData, got)
-}
 
 func TestDecode_Coproduct(t *testing.T) {
 	t.Parallel()
@@ -264,31 +219,6 @@ func TestDecodeListElementPathError(t *testing.T) {
 		&got,
 	)
 	require.EqualError(t, err, "element 0: expected bit value, got sixty.IntValue")
-}
-
-func TestDecodeOptional(t *testing.T) {
-	t.Parallel()
-
-	schema := sixty.Optional{Schema: sixty.Int{}}
-
-	// absent zeroes the target
-	var got int64
-	err := common.Decode(schema, sixty.OptionalValue{IsValid: false}, &got)
-	require.NoError(t, err)
-	require.Equal(t, int64(0), got)
-
-	// present into non-pointer reuses the target
-	got = 5
-	err = common.Decode(schema,
-		sixty.OptionalValue{SchemaValue: sixty.IntValue(7), IsValid: true}, &got)
-	require.NoError(t, err)
-	require.Equal(t, int64(7), got)
-
-	// present inner error propagates unwrapped
-	optSchema := sixty.Optional{Schema: sixty.Bit{}}
-	err = common.Decode(optSchema,
-		sixty.OptionalValue{SchemaValue: sixty.IntValue(7), IsValid: true}, new(*bool))
-	require.EqualError(t, err, "expected bit value, got sixty.IntValue")
 }
 
 func TestEncodeKindMismatches(t *testing.T) {

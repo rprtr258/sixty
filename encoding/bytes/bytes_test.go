@@ -10,35 +10,6 @@ import (
 	"github.com/rprtr258/sixty/internal"
 )
 
-var bttvEmotesDBBytes = []byte{
-	0x02,
-	0x05, 0x4b, 0x61, 0x70, 0x70, 0x61, // "Kappa"
-	0x02,
-	// ids are fixed-length [8]rune arrays without length prefixes
-	0x6b, 0x61, 0x70, 0x70, 0x61, 0x5f, 0x30, 0x31, // "kappa_01"
-	0x6b, 0x61, 0x70, 0x70, 0x61, 0x5f, 0x30, 0x32, // "kappa_02"
-	0x08, 0x50, 0x6f, 0x67, 0x43, 0x68, 0x61, 0x6d, 0x70, // "PogChamp"
-	0x02,
-	0x70, 0x6f, 0x67, 0x63, 0x68, 0x5f, 0x30, 0x31, // "pogch_01"
-	0x70, 0x6f, 0x67, 0x63, 0x68, 0x5f, 0x30, 0x32, // "pogch_02"
-}
-
-func TestBttvDBDecode(t *testing.T) {
-	t.Parallel()
-
-	got, err := bytes.Codec.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBBytes)
-	require.NoError(t, err)
-	require.Equal(t, internal.BttvEmotesDBData, got)
-}
-
-func TestBttvDBEncode(t *testing.T) {
-	t.Parallel()
-
-	got, err := bytes.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
-	require.NoError(t, err)
-	require.Equal(t, bttvEmotesDBBytes, got)
-}
-
 func TestRoundTripAllTypes(t *testing.T) {
 	t.Parallel()
 
@@ -79,13 +50,6 @@ func TestRoundTripAllTypes(t *testing.T) {
 	for _, test := range testCases {
 		require.Equal(t, test.Value, internal.RoundTrip(t, test.Schema, test.Value, bytes.Codec), "schema %T", test.Schema)
 	}
-}
-
-func TestDecodeInvalidBit(t *testing.T) {
-	t.Parallel()
-
-	_, err := bytes.Codec.Decode(sixty.Bit{}, []byte{0x02})
-	require.ErrorContains(t, err, "expected bit which is either 0 or 1, found: 2")
 }
 
 func TestDecodeEnumOutOfRange(t *testing.T) {

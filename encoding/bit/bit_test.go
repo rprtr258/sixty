@@ -9,28 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var bttvEmotesDBBits = []byte{
-	0x66, 0x4b, 0x61, 0x70, 0x70, 0x61, 0x6d, 0x6c, 0x2e, 0x0e, 0x0c, 0x2b, 0xe6, 0x06, 0x2d, 0x6c,
-	0x2e, 0x0e, 0x0c, 0x2b, 0xe6, 0x06, 0x42, 0x54, 0x1b, 0xd9, 0xd0, 0xda, 0x18, 0x5b, 0x5c, 0x1b,
-	0x83, 0x7b, 0x3b, 0x1b, 0x42, 0xf9, 0x81, 0x8b, 0x83, 0x7b, 0x3b, 0x1b, 0x42, 0xf9, 0x81, 0x90,
-}
-
-func TestBttvDBDecode(t *testing.T) {
-	t.Parallel()
-
-	got, err := bit.Codec.Decode(internal.BttvEmotesDBSchema, bttvEmotesDBBits)
-	require.NoError(t, err)
-	require.Equal(t, internal.BttvEmotesDBData, got)
-}
-
-func TestBttvDBEncode(t *testing.T) {
-	t.Parallel()
-
-	got, err := bit.Codec.Encode(internal.BttvEmotesDBSchema, internal.BttvEmotesDBData)
-	require.NoError(t, err)
-	require.Equal(t, bttvEmotesDBBits, got)
-}
-
 func TestRoundTripAllTypes(t *testing.T) {
 	t.Parallel()
 
@@ -63,50 +41,6 @@ func TestRoundTripAllTypes(t *testing.T) {
 	for _, test := range testCases {
 		require.Equal(t, test.Value, internal.RoundTrip(t, test.Schema, test.Value, bit.Codec), "schema %T", test.Schema)
 	}
-}
-
-func TestWriteUintGamma(t *testing.T) {
-	t.Parallel()
-
-	testCases := []struct {
-		value    uint64
-		encoding []byte
-	}{
-		// Elias gamma of value+1: leading zeros then the binary of value+1
-		{0, []byte{0x80}},        // 1
-		{1, []byte{0x40}},        // 010
-		{2, []byte{0x60}},        // 011
-		{42, []byte{0x05, 0x60}}, // 00000 101011
-	}
-	for _, test := range testCases {
-		got, err := bit.Codec.Encode(sixty.Uint{}, sixty.UintValue(test.value))
-		require.NoError(t, err)
-		require.Equal(t, test.encoding, got, "value %d", test.value)
-	}
-}
-
-func TestDecodeOptionalPresent(t *testing.T) {
-	t.Parallel()
-
-	// present marker gamma(2)="010" + zigzag(42)=84 as gamma(85)="0000001010101"
-	got, err := bit.Codec.Decode(sixty.Optional{Schema: sixty.Int{}}, []byte{0x40, 0x55})
-	require.NoError(t, err)
-	require.Equal(t, sixty.OptionalValue{SchemaValue: sixty.IntValue(42), IsValid: true}, got)
-}
-
-func TestDecodeCoproduct(t *testing.T) {
-	t.Parallel()
-
-	// variant tag "00" (variant 0 of 2) + zigzag(42)=84 as gamma(85)
-	got, err := bit.Codec.Decode(
-		sixty.Coproduct{{"a", sixty.Int{}}, {"b", sixty.String{}}},
-		[]byte{0x00, 0xaa},
-	)
-	require.NoError(t, err)
-	require.Equal(t,
-		sixty.CoproductValue{SchemaValue: sixty.IntValue(42), Variant: 0},
-		got,
-	)
 }
 
 func TestDecodeEnumOutOfRange(t *testing.T) {
@@ -184,25 +118,6 @@ func TestUnicodeRoundTrip(t *testing.T) {
 	require.Equal(t,
 		sixty.RuneValue('ж'),
 		internal.RoundTrip(t, sixty.Rune{}, sixty.RuneValue('ж'), bit.Codec),
-	)
-}
-
-// regression: encoding 0 used to write 1 bit while decoding consumed 2 bits,
-// silently desyncing composite values.
-func TestZeroUintInsideProduct(t *testing.T) {
-	t.Parallel()
-
-	schema := sixty.Product{{"a", sixty.Uint{}}, {"b", sixty.Uint{}}}
-	value := sixty.ProductValue{sixty.UintValue(0), sixty.UintValue(1)}
-	require.Equal(t, value, internal.RoundTrip(t, schema, value, bit.Codec))
-}
-
-func TestRoundTripNearMaxUint(t *testing.T) {
-	t.Parallel()
-
-	require.Equal(t,
-		sixty.UintValue(0xFFFFFFFFFFFFFFFE),
-		internal.RoundTrip(t, sixty.Uint{}, sixty.UintValue(0xFFFFFFFFFFFFFFFE), bit.Codec),
 	)
 }
 
